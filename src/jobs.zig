@@ -55,8 +55,20 @@ pub fn resetSignals() void {
     for ([_]linux.SIG{ .INT, .QUIT, .TSTP, .TTIN, .TTOU }) |s| setSignal(s, .dfl);
 }
 
+/// The terminal went away: hang up every job, then leave. Only async-signal-safe
+/// calls (kill, exit_group) are used.
+fn onHangup(_: linux.SIG) callconv(.c) void {
+    for (table.items) |j| {
+        _ = linux.kill(-j.pgid, .HUP);
+        _ = linux.kill(-j.pgid, .CONT); // a stopped job must wake up to see the HUP
+    }
+    linux.exit_group(129);
+}
+
 /// Called once by an interactive shell: take ownership of the terminal.
 pub fn initInteractive() void {
+    const hup: linux.Sigaction = .{ .handler = .{ .handler = onHangup }, .mask = linux.sigemptyset(), .flags = 0 };
+    _ = linux.sigaction(.HUP, &hup, null);
     // Loop until we are in the foreground (a shell started from another shell's job).
     shell_pgid = sys.getpid();
     sys.setpgid(0, shell_pgid);

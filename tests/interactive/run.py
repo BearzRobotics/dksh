@@ -126,6 +126,22 @@ try:
     hist = open(home + "/.state/dksh/history").read()
     check("history file records commands", "echo first-cmd" in hist and "var x = 41" in hist, hist)
 
+    # SIGHUP (terminal closed) hangs up background and stopped jobs
+    import signal, subprocess, time
+    def sleeping(): return subprocess.run(["pgrep", "-f", "^sleep 987"], capture_output=True).returncode == 0
+    for label, keys, stop in (("background job", "sleep 987 &\r", False), ("background pipeline", "sleep 987 | cat &\r", False), ("stopped job", "sleep 987\r", True)):
+        s = start(home)
+        s.send(keys); s.read(0.6)
+        if stop:
+            s.send("\x1a"); s.read(0.8)
+        was = sleeping()
+        os.kill(s.pid, signal.SIGHUP); time.sleep(1.0)
+        check(f"SIGHUP hangs up a {label}", was and not sleeping())
+        subprocess.run(["pkill", "-f", "^sleep 987"])
+        try: os.waitpid(s.pid, 0)
+        except ChildProcessError: pass
+        s.close()
+
     # exit builtin and login profile
     s = start(home, 'fn prompt() { return "PS> " }\n')
     out = run(s, "exit 3\r", 0.8)

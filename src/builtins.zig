@@ -39,6 +39,7 @@ const commands = [_]Command{
     .{ .name = "history", .run = cmdHistory },
     .{ .name = "type", .run = cmdType },
     .{ .name = "umask", .run = cmdUmask },
+    .{ .name = "ulimit", .run = cmdUlimit },
 };
 
 pub fn findCommand(name: []const u8) ?CommandFn {
@@ -174,6 +175,90 @@ pub fn findExecutable(ip: *Interp, name: []const u8) ?[:0]const u8 {
         if (sys.isExecutable(mem.gpa, full)) return sys.dupeZ(mem.gpa, full) catch null;
     }
     return null;
+}
+
+const Limit = struct { flag: u8, res: std.os.linux.rlimit_resource, unit: u64, what: []const u8 };
+
+/// Units follow bash: -f and -c count 512-byte blocks, -s -d -v -m -l kilobytes.
+const limits = [_]Limit{
+    .{ .flag = 'c', .res = .CORE, .unit = 512, .what = "core file size (blocks)" },
+    .{ .flag = 'd', .res = .DATA, .unit = 1024, .what = "data seg size (kbytes)" },
+    .{ .flag = 'f', .res = .FSIZE, .unit = 512, .what = "file size (blocks)" },
+    .{ .flag = 'l', .res = .MEMLOCK, .unit = 1024, .what = "max locked memory (kbytes)" },
+    .{ .flag = 'm', .res = .RSS, .unit = 1024, .what = "max memory size (kbytes)" },
+    .{ .flag = 'n', .res = .NOFILE, .unit = 1, .what = "open files" },
+    .{ .flag = 's', .res = .STACK, .unit = 1024, .what = "stack size (kbytes)" },
+    .{ .flag = 't', .res = .CPU, .unit = 1, .what = "cpu time (seconds)" },
+    .{ .flag = 'u', .res = .NPROC, .unit = 1, .what = "max user processes" },
+    .{ .flag = 'v', .res = .AS, .unit = 1024, .what = "virtual memory (kbytes)" },
+};
+
+fn showLimit(l: Limit, hard: bool) void {
+    var r: std.os.linux.rlimit = undefined;
+    if (std.os.linux.errno(std.os.linux.getrlimit(l.res, &r)) != .SUCCESS) return;
+    const v = if (hard) r.max else r.cur;
+    if (v == std.math.maxInt(u64)) {
+        sys.write(1, "unlimited\n");
+    } else sys.write(1, mem.print("{d}\n", .{v / l.unit}));
+}
+
+/// ulimit [-H|-S] [-a] [-c|-d|-f|-l|-m|-n|-s|-t|-u|-v] [limit|unlimited]
+fn cmdUlimit(ip: *Interp, argv: []const []const u8, span: Span) Error!u8 {
+    var which: Limit = limits[2]; // -f, like bash
+    var hard = false;
+    var soft = false;
+    var all = false;
+    var value_arg: ?[]const u8 = null;
+    for (argv[1..]) |a| {
+        if (a.len > 1 and a[0] == '-') {
+            for (a[1..]) |f| {
+                switch (f) {
+                    'H' => hard = true,
+                    'S' => soft = true,
+                    'a' => all = true,
+                    else => {
+                        var found = false;
+                        for (limits) |l| {
+                            if (l.flag == f) {
+                                which = l;
+                                found = true;
+                            }
+                        }
+                        if (!found) return ip.raise(span, "ulimit: unknown option -{c}", .{f});
+                    },
+                }
+            }
+        } else value_arg = a;
+    }
+    if (all) {
+        for (limits) |l| {
+            var r: std.os.linux.rlimit = undefined;
+            if (std.os.linux.errno(std.os.linux.getrlimit(l.res, &r)) != .SUCCESS) continue;
+            const v = if (hard) r.max else r.cur;
+            const text = if (v == std.math.maxInt(u64)) "unlimited" else mem.print("{d}", .{v / l.unit});
+            sys.write(1, mem.print("-{c}: {s: <28} {s}\n", .{ l.flag, l.what, text }));
+        }
+        return 0;
+    }
+    const text = value_arg orelse {
+        showLimit(which, hard and !soft);
+        return 0;
+    };
+    var r: std.os.linux.rlimit = undefined;
+    _ = std.os.linux.getrlimit(which.res, &r);
+    const new: u64 = if (std.mem.eql(u8, text, "unlimited")) std.math.maxInt(u64) else blk: {
+        const n = std.fmt.parseInt(u64, text, 10) catch return ip.raise(span, "ulimit: invalid limit: {s}", .{text});
+        break :blk std.math.mul(u64, n, which.unit) catch return ip.raise(span, "ulimit: limit too large: {s}", .{text});
+    };
+    // Neither flag sets both, as in bash.
+    if (hard or !soft) r.max = new;
+    if (soft or !hard) r.cur = new;
+    if (!hard and !soft and r.cur > r.max) r.cur = r.max;
+    if (std.os.linux.errno(std.os.linux.setrlimit(which.res, &r)) != .SUCCESS) {
+        errOut("ulimit: cannot set limit: operation not permitted\n", .{});
+        return 1;
+    }
+    return 0;
 }
 
 fn cmdUmask(ip: *Interp, argv: []const []const u8, span: Span) Error!u8 {

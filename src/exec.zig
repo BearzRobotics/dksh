@@ -335,6 +335,7 @@ fn execExternal(ip: *Interp, st: Stage) noreturn {
 /// Body of a forked child: never returns.
 fn childMain(ip: *Interp, st: Stage) noreturn {
     ip.in_child = true;
+    ip.interactive = false;
     if (!applyRedirs(st.redirs)) sys.exit(1);
     switch (st.target) {
         .external => execExternal(ip, st),
@@ -485,6 +486,7 @@ fn runBackground(ip: *Interp, cl: *const ast.CommandList, env: *Env) Error!u8 {
     if (pid == 0) {
         ip.in_child = true;
         jobs.childSetup(0, ip.interactive);
+        ip.interactive = false; // not the terminal owner; stages stay in this job's group
         // Background jobs must not read the terminal.
         if (sys.open(mem.gpa, "/dev/null", .{ .CLOEXEC = true }, 0)) |fd| {
             sys.dup2(fd, 0) catch {};
@@ -513,6 +515,7 @@ pub fn capture(ip: *Interp, cl: *const ast.CommandList, env: *Env) Error![]const
     const pid = sys.fork() catch return ip.raise(cl.span, "cannot fork: {s}", .{sys.errnoText()});
     if (pid == 0) {
         ip.in_child = true;
+        ip.interactive = false;
         sys.dup2(p[1], 1) catch sys.exit(1);
         sys.close(p[0]);
         sys.close(p[1]);

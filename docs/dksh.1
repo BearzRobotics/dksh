@@ -350,6 +350,9 @@ Say whether each name is a function, a builtin or a file.
 .TP
 \fBumask [mode]\fR
 Show or set the file creation mask (octal).
+.TP
+\fBulimit [\-HS] [\-a] [\-cdflmnstuv] [n|unlimited]\fR
+Show or set resource limits. Units are as in bash (blocks for \-c and \-f, kilobytes for \-d \-l \-m \-s \-v). With neither \-H nor \-S both the soft and hard limit are set.
 .SH ERRORS
 .PP
 In a script a command that exits non\-zero raises an error, which stops the script unless it is caught. The exceptions are a command used as the condition of if or while, on the left of && or ||, negated with !, or inside status(...). At the interactive prompt, errors are reported and the prompt returns; the shell never exits because a command failed. Every error shows the file, line, column and the source line:
@@ -721,6 +724,24 @@ Every pipeline runs in its own process group and the foreground job owns the ter
 sleep 100
 .RE
 .fi
+.SH LOGIN SHELL
+.PP
+dksh can be a login shell: add it to /etc/shells and use chsh(1). It is a login shell when started with \fB\-l\fR or when argv[0] starts with a dash, which is what login(1), su \- and sudo \-i do. A login shell reads the profile files first, then runs whatever it was asked to run: the prompt, a command (\fB\-c\fR, as in "su \- user \-c cmd") or a script. A plain "\fBdksh \-c\fR cmd", as used by ssh for remote commands, scp, rsync and sftp, reads no startup file. dksh never reads /etc/profile or ~/.profile, because they are sh syntax; put PATH, umask, ulimit and similar settings in /etc/dksh/profile.dksh or $XDG_CONFIG_HOME/dksh/profile.dksh. Checks (\fB\-n\fR, \fB\-\-tree\fR) never execute a profile.
+.PP
+When the terminal hangs up, dksh sends SIGHUP to its jobs and exits with status 129.
+.PP
+Test with a throwaway user before changing your own shell, and keep a second root session open:
+.PP
+.nf
+.RS 4
+sudo install \-m 755 dksh /usr/bin/dksh
+echo /usr/bin/dksh | sudo tee \-a /etc/shells
+sudo useradd \-m \-s /usr/bin/dksh dkshtest
+sudo su \- dkshtest \-c 'echo $PATH'
+.RE
+.fi
+.PP
+Tools that send POSIX shell syntax to $SHELL \-c will fail on the parts that are not dksh syntax: VAR=value cmd, export, >&2, $((...)) and ${var:\-default}. Plain commands, &&, ;, |, $(...), 2>&1, ~ and $HOME work. Scripts starting with #!/usr/bin/bash always run under bash.
 .SH EXIT STATUS
 .TP
 \fB0\fR

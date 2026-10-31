@@ -32,6 +32,7 @@ something show their output as comments.
 - [Formatted output](#formatted-output)
 - [Standard library reference](#standard-library-reference)
 - [Interactive use](#interactive-use)
+- [Using dksh as your login shell](#using-dksh-as-your-login-shell)
 - [Debugging a script](#debugging-a-script)
 - [Coming from bash](#coming-from-bash)
 - [A complete example](#a-complete-example)
@@ -804,6 +805,7 @@ If the captured command fails, the failure is an error (except inside
 | `history` | print the command history |
 | `type name...` | say whether a name is a function, builtin or file |
 | `umask [mode]` | show or set the file creation mask (octal) |
+| `ulimit [-HS] [-a] [-cdflmnstuv] [n\|unlimited]` | show or set resource limits (units as in bash; no flag sets both soft and hard) |
 
 ```dksh
 cd /tmp
@@ -1455,6 +1457,78 @@ sleep 100
 ^C
 u@host ~ >
 ```
+
+---
+
+## Using dksh as your login shell
+
+dksh is a single static binary, so it can be a login shell even when
+`/usr/lib` is damaged. To try it safely:
+
+```sh
+# 1. install the binary and the default startup files
+sudo install -m 755 zig-out/bin/dksh /usr/bin/dksh
+sudo mkdir -p /etc/dksh
+sudo cp zig-out/share/dksh/profile.dksh /etc/dksh/profile.dksh
+sudo cp zig-out/share/dksh/dkshrc.dksh  /etc/dksh/dkshrc.dksh   # optional
+
+# 2. register it as a valid login shell
+echo /usr/bin/dksh | sudo tee -a /etc/shells
+
+# 3. test BEFORE changing your shell: a login session as a throwaway user
+sudo useradd -m -s /usr/bin/dksh dkshtest
+sudo su - dkshtest                    # interactive login
+sudo su - dkshtest -c 'echo $PATH'    # non-interactive login
+ssh dkshtest@localhost 'echo ok'      # remote command
+
+# 4. only then
+chsh -s /usr/bin/dksh
+```
+
+Keep a second root session (or a root account with bash) open while you test,
+and note `chsh -s /bin/bash` is the way back.
+
+**What runs when:**
+
+| How it starts | Reads |
+|---|---|
+| console login, `su -`, `sudo -i`, `ssh host` (interactive) | profile files, then the rc files |
+| `su - user -c cmd`, `sudo -i cmd` (login, non-interactive) | profile files, then runs `cmd` |
+| `ssh host cmd`, `scp`, `rsync`, `sftp`, `su user -c cmd` | nothing: runs `$SHELL -c cmd` |
+| `dksh script.dksh` | nothing |
+
+dksh never reads `/etc/profile` or `~/.profile` (they are `sh` syntax). Put
+what they would set up in `/etc/dksh/profile.dksh` or
+`~/.config/dksh/profile.dksh`: `PATH`, `umask`, `ulimit`, `EDITOR`, and so on.
+When the terminal hangs up, dksh sends SIGHUP to its jobs and exits.
+
+```dksh
+# /etc/dksh/profile.dksh
+if (!("PATH" in env)) {
+    env.PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+}
+umask 022
+ulimit -c 0          # no core files
+```
+
+**The catch: tools that send POSIX shell syntax to `$SHELL -c`.** `ssh host
+'cmd'` hands the string to your login shell. Plain commands, `&&`, `;`, `|`,
+`$(...)`, `2>&1`, `~` and `$HOME` all work in dksh. These do not, because
+they are `sh`-only syntax:
+
+| Written by a tool or by habit | In dksh |
+|---|---|
+| `VAR=value cmd` | `env.VAR = "value"` first, or `env VAR=value cmd` |
+| `export VAR=value` | `env.VAR = "value"` |
+| `cmd >&2` | `cmd 2>&1`, or `printErr(...)` |
+| `$((1 + 2))`, `${var:-default}` | expressions: `1 + 2` |
+| `[ -f x ]`, `[[ ... ]]` | `test -f x`, or `isFile("x")` in an expression |
+
+Most tools are fine (Ansible, make, git hooks and cron all use `/bin/sh`
+explicitly). If one breaks, make it call `sh -c '...'` itself, or run the
+command as `ssh host sh -c '...'` / `ssh host bash -c '...'`. Executable
+scripts with a `#!/usr/bin/bash` line always run under bash, whatever your
+login shell is (see Shebang).
 
 ---
 

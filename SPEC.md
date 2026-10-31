@@ -758,6 +758,14 @@ Where the implementation made a choice the spec leaves open, or differs:
   interpreter on the file with the same arguments, keeping the rule that dksh
   never parses sh or bash syntax. `-n`, `--dump-ast` and `--tree` refuse such
   files (status 2) instead of running them.
+- **Login shells.** `-l` (or an argv[0] starting with `-`) reads the profile
+  files in every mode: interactive, `-c` and scripts, as `su - user -c cmd` and
+  `sudo -i cmd` need. Checks (`-n`, `--tree`) never execute it. A hangup
+  (SIGHUP) from the terminal sends SIGHUP to every job and ends the shell.
+  Background jobs and subshells keep their children in the job's own process
+  group.
+- **`ulimit`** is also built in (`-c -d -f -l -m -n -s -t -u -v`, `-H`, `-S`,
+  `-a`), because login profiles use it.
 - **Closing braces.** A standalone `}` also ends a command when it is followed
   by `)`, `,`, `]` or `}`, so `fn(s) { rm -f $f }` works as an argument.
 - **Parse-only mode** (`dksh -n`) also reports shadowed variables as warnings.

@@ -167,6 +167,13 @@ fn completeHook(ctx: *anyopaque, text: []const u8, cursor: usize) ?editor.Comple
     return complete.complete(c.ip, text, cursor);
 }
 
+/// Login shells read the profile files first, whether they then run a
+/// command, a script or the prompt (`su - user -c cmd`, `sudo -i cmd`).
+pub fn sourceProfiles(ip: *Interp) void {
+    sourceIfExists(ip, "/etc/dksh/profile.dksh");
+    sourceIfExists(ip, mem.print("{s}/profile.dksh", .{configDir(ip)}));
+}
+
 pub fn run(ip: *Interp, login: bool, force: bool) u8 {
     if (!force and !sys.isatty(0)) {
         // Input redirected: behave like a script read from standard input.
@@ -180,10 +187,8 @@ pub fn run(ip: *Interp, login: bool, force: bool) u8 {
         if (sys.getcwd(mem.gpa)) |cwd| ip.env_map.put("PWD", .{ .str = cwd }) else |_| {}
     }
 
-    if (login) {
-        sourceIfExists(ip, "/etc/dksh/profile.dksh");
-        sourceIfExists(ip, mem.print("{s}/profile.dksh", .{configDir(ip)}));
-    }
+    // Login profiles were already read by main (for every mode).
+    _ = login;
     sourceIfExists(ip, "/etc/dksh/dkshrc.dksh");
     sourceIfExists(ip, mem.print("{s}/dkshrc.dksh", .{configDir(ip)}));
 

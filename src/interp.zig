@@ -168,6 +168,7 @@ pub const Interp = struct {
         const pid = sys.fork() catch return ip.raise(s.span, "cannot fork: {s}", .{sys.errnoText()});
         if (pid == 0) {
             ip.in_child = true;
+            ip.interactive = false;
             jobs.resetSignals();
             ip.traps = .empty;
             ip.exit_trap = null;

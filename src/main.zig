@@ -115,6 +115,11 @@ pub fn main(init: std.process.Init.Minimal) u8 {
     const ip = Interp.init(rest.items, environ);
     ip.trace = trace;
     ip.errexit = errexit;
+    // Login profile first, so every mode sees the environment it sets up. Not
+    // for checks (-n, --tree), which must not execute anything.
+    if (login and !check_only and !dump_ast and !draw_tree) {
+        @import("repl.zig").sourceProfiles(ip);
+    }
 
     if (command) |src| {
         const st = runText(ip, "-c", src, check_only, dump_ast, draw_tree);
