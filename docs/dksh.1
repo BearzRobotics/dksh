@@ -742,7 +742,7 @@ env.PS1 = '[\e?] ${env.USER}@\eh $(git branch \-\-show\-current 2>/dev/null) > '
 .RE
 .fi
 .PP
-\fBexpandPrompt(template)\fR returns what PS1 would show for a template; use it inside a prompt function or to preview a prompt. A function named \fBprecmd\fR, if defined, runs before every prompt, like bash's PROMPT_COMMAND.
+\fBexpandPrompt(template)\fR returns what PS1 would show for a template; use it inside a prompt function or to preview a prompt. A function named \fBprecmd\fR, if defined, runs before every prompt, like bash's PROMPT_COMMAND. A function named \fBpreexec\fR(cmd), if defined, runs right after Enter and before the command starts, with the exact line typed (a multi\-line command is one string); it does not run for empty lines or for commands run inside scripts or functions, and an error in it is reported without stopping the command. Together they can time commands:
 .PP
 .nf
 .RS 4
@@ -751,6 +751,19 @@ fn prompt() {
     return expandPrompt('\e[\ee[36m\e]\ew\e[\ee[0m\e]') + (b == "" ? "" : " (${b})") + " > "
 }
 fn precmd() { printf("\ee]0;%s\ee\e\e", shortPath(cwd())) }
+.RE
+.fi
+.PP
+.nf
+.RS 4
+var started = null
+fn preexec(cmd) { started = now() }
+fn precmd() {
+    if (started != null) {
+        if (now() \- started > 2.0) { printErr(sprintf("took %.1fs", now() \- started)) }
+        started = null
+    }
+}
 .RE
 .fi
 .SS Startup files

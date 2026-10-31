@@ -1464,6 +1464,31 @@ fn precmd() {
 }
 ```
 
+**`preexec(cmd)`.** If you define `fn preexec(cmd)`, it runs right after you
+press Enter and before the command starts; `cmd` is the exact line you typed
+(a multi-line command arrives as one string with newlines). It does not run
+for empty lines, for commands inside scripts or functions, or for commands
+run by other hooks. If it raises an error, the error is reported and the
+command still runs. Together with `precmd` it makes timing a command easy:
+
+```dksh
+var started = null
+fn preexec(cmd) { started = now() }
+fn precmd() {
+    if (started != null) {
+        var secs = now() - started
+        started = null
+        if (secs > 2.0) { printErr(sprintf("took %.1fs", secs)) }
+    }
+}
+```
+
+Or show the running command in the terminal title:
+
+```dksh
+fn preexec(cmd) { printf("\e]0;%s\e\\", cmd) }
+```
+
 If no `PS1` or `prompt` is defined, the default is `user@host dir > `
 (`#` instead of `>` for root).
 

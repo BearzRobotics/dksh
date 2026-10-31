@@ -227,6 +227,15 @@ pub fn run(ip: *Interp, login: bool, force: bool) u8 {
         if (std.mem.trim(u8, line, " \t\n").len == 0) continue;
         editor.addHistory(line);
         ip.cmd_number += 1;
+        // `preexec(cmd)` sees the line just before it runs. Its errors are
+        // reported but never stop the command.
+        if (ip.globals.lookup("preexec")) |slot| {
+            if (slot.value == .func) {
+                _ = ip.callFunc(slot.value.func, null, &.{.{ .str = mem.dupe(line) }}, .{}) catch |e| {
+                    if (e == error.Raise) ip.report();
+                };
+            }
+        }
         const st = ip.runSource("<stdin>", mem.dupe(line), ip.globals);
         if (st != ip.last_status or true) ip.last_status = st;
         if (ip.exit_code != 0 or ip.exit_requested) return ip.exit_code;

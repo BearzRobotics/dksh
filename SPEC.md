@@ -763,7 +763,8 @@ Where the implementation made a choice the spec leaves open, or differs:
   \D{fmt} \j \! \# \[ \] \e \nnn` ...) plus `\?` (previous status), then with
   dksh string interpolation (`${expr}`, `$name`, `$(cmd)`). Order: `prompt()`,
   then `PS1`, then the default. `PS2` is the continuation prompt, `PROMPT_DIRTRIM`
-  trims `\w`, `fn precmd()` runs before each prompt, and `expandPrompt(t)`
+  trims `\w`, `fn precmd()` runs before each prompt, `fn preexec(cmd)` runs after Enter and before
+  the command (errors reported, command still runs), and `expandPrompt(t)`
   renders a template. A template that fails to evaluate is shown unexpanded after
   one error message.
 - **Login shells.** `-l` (or an argv[0] starting with `-`) reads the profile
