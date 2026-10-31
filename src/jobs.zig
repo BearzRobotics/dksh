@@ -211,6 +211,11 @@ fn printJob(j: *Job, newline_first: bool) void {
     sys.write(2, mem.print("{s}[{d}]{c}  {s: <10} {s}\n", .{ if (newline_first) "\n" else "", j.id, cur, stateName(j.state), j.cmd }));
 }
 
+/// Number of jobs the shell is tracking (`\\j` in a prompt).
+pub fn count() usize {
+    return table.items.len;
+}
+
 pub fn printJobs() void {
     for (table.items) |j| {
         const cur: u8 = if (table.items[table.items.len - 1] == j) '+' else '-';

@@ -1,0 +1,25 @@
+# Deterministic prompt escapes (user, host and time vary, so they are not tested here).
+print(expandPrompt('plain text'))
+print(expandPrompt('\\ backslash, \101\102 octal, \x unknown'))
+print(expandPrompt('line1\nline2'))
+print(expandPrompt('\s \v \V'))
+print(expandPrompt('status \?, jobs \j, cmd \#, hist \!'))
+print(len(expandPrompt('\e[0m')), len(expandPrompt('\a')))
+var m = expandPrompt('\[x\]')
+print(len(m), m[0] == "\0" ? "nul" : "marker-ok")
+cd /usr/share
+print(expandPrompt('\w|\W'))
+env.PROMPT_DIRTRIM = "1"
+print(expandPrompt('\w'))
+cd /usr/share/zoneinfo
+env.PROMPT_DIRTRIM = "2"
+print(expandPrompt('\w'))
+cd /
+print(expandPrompt('\w|\W'))
+print(expandPrompt('sum=${1 + 2} str=${"a" + "b"} cmd=$(echo hi) arr=${[1, 2]}'))
+var name = "world"
+print(expandPrompt('hello $name'))
+print(expandPrompt('\D{%Y} \D{} ') != "")
+try { expandPrompt(5) } catch (e) { print(e.message) }
+print(expandPrompt('\u') != "", expandPrompt('\h') != "", expandPrompt('\H') != "", expandPrompt('\t') =~ '^\d\d:\d\d:\d\d$')
+print(expandPrompt('\d') =~ '^\w{3} \w{3} \d\d$', expandPrompt('\A') =~ '^\d\d:\d\d$', expandPrompt('\@') =~ '^\d\d:\d\d [AP]M$')

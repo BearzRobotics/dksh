@@ -1,0 +1,3 @@
+before ${nosuchvar} after
+again ${nosuchvar} after
+fine 2

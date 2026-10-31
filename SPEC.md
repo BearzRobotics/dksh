@@ -758,6 +758,14 @@ Where the implementation made a choice the spec leaves open, or differs:
   interpreter on the file with the same arguments, keeping the rule that dksh
   never parses sh or bash syntax. `-n`, `--dump-ast` and `--tree` refuse such
   files (status 2) instead of running them.
+- **Prompts.** Besides `fn prompt()` (6.3), `PS1` and `PS2` (a global variable
+  or `env`) are expanded with bash's backslash escapes (`\u \h \w \W \$ \t \d
+  \D{fmt} \j \! \# \[ \] \e \nnn` ...) plus `\?` (previous status), then with
+  dksh string interpolation (`${expr}`, `$name`, `$(cmd)`). Order: `prompt()`,
+  then `PS1`, then the default. `PS2` is the continuation prompt, `PROMPT_DIRTRIM`
+  trims `\w`, `fn precmd()` runs before each prompt, and `expandPrompt(t)`
+  renders a template. A template that fails to evaluate is shown unexpanded after
+  one error message.
 - **Login shells.** `-l` (or an argv[0] starting with `-`) reads the profile
   files in every mode: interactive, `-c` and scripts, as `su - user -c cmd` and
   `sudo -i cmd` need. Checks (`-n`, `--tree`) never execute it. A hangup

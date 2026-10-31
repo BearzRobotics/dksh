@@ -1,0 +1,18 @@
+plain text
+\ backslash, AB octal, \x unknown
+line1
+line2
+dksh 0.0 0.0.1
+status 0, jobs 0, cmd 1, hist 1
+4 1
+3 marker-ok
+/usr/share|share
+.../share
+.../share/zoneinfo
+/|/
+sum=3 str=ab cmd=hi arr=[1, 2]
+hello world
+true
+template must be a string, got int
+true true true true
+true true true

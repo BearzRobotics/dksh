@@ -111,6 +111,11 @@ fn makePath(path: []const u8) void {
     }
 }
 
+/// Number of commands in the history (`\\!` in a prompt).
+pub fn historyCount() usize {
+    return history.items.len;
+}
+
 pub fn printHistory() void {
     for (history.items, 0..) |l, i| sys.write(1, mem.print("{d: >5}  {s}\n", .{ i + 1, l }));
 }

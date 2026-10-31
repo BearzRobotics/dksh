@@ -611,6 +611,9 @@ Send a signal; a negative pid signals a process group.
 \fBsleep(seconds), now(), time(fn)\fR
 Pause (int or float); seconds since the epoch as a float; run fn() and return the seconds it took.
 .TP
+\fBexpandPrompt(template)\fR
+The text PS1 would show for a template (see The prompt).
+.TP
 \fBtrap(sig, fn)\fR
 See ERRORS, Signals and subshells.
 .TP
@@ -691,13 +694,63 @@ fn complete_deploy(words, word) {
 A grey suggestion from history follows the cursor. Command words are green when they resolve to a function, builtin or executable and red when they do not; keywords are blue, quoted text yellow, $variables cyan and comments grey. Both are off when NO_COLOR is set or TERM is dumb.
 .SS The prompt
 .PP
-The prompt is whatever the prompt function returns. If none is defined, the default is user@host dir > (# instead of > for root). Escape sequences in the returned string take no width.
+There are two ways to set the prompt, and they can be mixed. If a function named \fBprompt\fR is defined it wins; otherwise \fBPS1\fR is used; otherwise the default is user@host dir > (# instead of > for root).
+.PP
+\fBPS1\fR and \fBPS2\fR are read from a global variable or from env, so a PS1 exported by a parent shell is honored. PS2 is the continuation prompt shown while a brace, quote or parenthesis is open (default "... "). Use single quotes so backslashes and $ reach the prompt code unchanged. Backslash escapes are expanded first, as in bash:
+.TP
+.B \eu
+user name
+.TP
+.B \eh, \eH
+host name up to the first dot; the full host name
+.TP
+.B \ew, \eW
+working directory with the home directory as ~ (trimmed by \fBPROMPT_DIRTRIM\fR); its basename
+.TP
+.B \e$
+# for root, $ otherwise
+.TP
+.B \et, \eT, \e@, \eA
+time as HH:MM:SS (24 hour), HH:MM:SS (12 hour), HH:MM AM/PM, HH:MM
+.TP
+.B \ed, \eD{format}
+date like "Sat Oct 31"; time with any date() format (empty braces: %H:%M:%S)
+.TP
+.B \ej, \e!, \e#
+number of jobs; history number; command number in this session
+.TP
+.B \e?
+(dksh extension) exit status of the previous command
+.TP
+.B \es, \ev, \eV, \el
+"dksh"; version 0.0; version 0.0.1; terminal device name
+.TP
+.B \en, \er, \ea, \ee, \ennn, \e\e
+newline, carriage return, bell, escape, the character with octal code nnn, a backslash
+.TP
+.B \e[, \e]
+begin and end a run of non\-printing characters (colors); they take no width on the line
+.PP
+Then dksh string interpolation runs on the result: ${expression}, $name and $(command) work as in any double\-quoted string. If the template cannot be evaluated, one error is printed and the template is shown as it is.
+.PP
+.nf
+.RS 4
+env.PS1 = '\e[\ee[32m\e]\eu@\eh\e[\ee[0m\e]:\ew\e$ '
+env.PS2 = '> '
+env.PROMPT_DIRTRIM = "3"
+env.PS1 = '[\e?] ${env.USER}@\eh $(git branch \-\-show\-current 2>/dev/null) > '
+.RE
+.fi
+.PP
+\fBexpandPrompt(template)\fR returns what PS1 would show for a template; use it inside a prompt function or to preview a prompt. A function named \fBprecmd\fR, if defined, runs before every prompt, like bash's PROMPT_COMMAND.
 .PP
 .nf
 .RS 4
 fn prompt() {
-    return "\ee[36m${shortPath(cwd())}\ee[0m > "
+    var b = $(git branch \-\-show\-current 2>/dev/null)
+    return expandPrompt('\e[\ee[36m\e]\ew\e[\ee[0m\e]') + (b == "" ? "" : " (${b})") + " > "
 }
+fn precmd() { printf("\ee]0;%s\ee\e\e", shortPath(cwd())) }
 .RE
 .fi
 .SS Startup files
@@ -777,6 +830,9 @@ Used as usual. They live in the env map.
 .TP
 \fBXDG_CONFIG_HOME, XDG_STATE_HOME, XDG_DATA_HOME\fR
 Locations of the files above.
+.TP
+\fBPS1, PS2, PROMPT_DIRTRIM\fR
+The prompt templates and the number of directories \ew keeps; see The prompt.
 .TP
 \fBNO_COLOR, TERM\fR
 Colors and suggestions are disabled if NO_COLOR is set or TERM is dumb.

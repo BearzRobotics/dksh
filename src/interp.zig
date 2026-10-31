@@ -54,6 +54,8 @@ pub const Interp = struct {
     in_trap: bool = false,
     /// Nesting of `status(...)`: inside it a missing command is status 127, not an error.
     status_depth: u32 = 0,
+    /// Commands entered at the prompt so far (`\\#` in a prompt).
+    cmd_number: usize = 0,
     modules: std.StringHashMapUnmanaged(Value) = .empty,
 
     pub fn init(args: []const []const u8, environ: []const [*:0]const u8) *Interp {

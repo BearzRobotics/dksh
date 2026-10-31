@@ -13,6 +13,7 @@ const regex = @import("regex.zig");
 const jobs = @import("jobs.zig");
 const json = @import("json.zig");
 const signals = @import("signals.zig");
+const prompts = @import("prompt.zig");
 const editor = @import("editor.zig");
 const Interp = @import("interp.zig").Interp;
 
@@ -352,6 +353,7 @@ const natives = [_]value.Native{
     native("exit", 0, 1, nExit),
     native("error", 1, 1, nError),
     native("trap", 1, 2, nTrap),
+    native("expandPrompt", 1, 1, nExpandPrompt),
     native("kill", 1, 2, nKill),
     native("sleep", 1, 1, nSleep),
     native("now", 0, 0, nNow),
@@ -855,6 +857,11 @@ fn nTrap(ip: *Interp, args: []const Value, span: Span) Error!Value {
         signals.set(sig, .catch_);
     }
     return .null_;
+}
+
+/// expandPrompt(template): what PS1/PS2 would show for a template.
+fn nExpandPrompt(ip: *Interp, args: []const Value, span: Span) Error!Value {
+    return .{ .str = prompts.render(ip, try needStr(ip, args[0], span, "template")) };
 }
 
 fn nKill(ip: *Interp, args: []const Value, span: Span) Error!Value {

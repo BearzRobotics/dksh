@@ -1,0 +1,3 @@
+print(expandPrompt('before ${nosuchvar} after'))
+print(expandPrompt('again ${nosuchvar} after'))
+print(expandPrompt('fine ${1 + 1}'))

@@ -7,6 +7,7 @@ const parser = @import("parser.zig");
 const editor = @import("editor.zig");
 const complete = @import("complete.zig");
 const jobs = @import("jobs.zig");
+const prompts = @import("prompt.zig");
 const interp_mod = @import("interp.zig");
 const Interp = interp_mod.Interp;
 
@@ -53,6 +54,7 @@ fn promptText(ip: *Interp) []const u8 {
             if (r == .str) return r.str;
         }
     }
+    if (prompts.template(ip, "PS1")) |t| return prompts.render(ip, t);
     return defaultPrompt(ip);
 }
 
@@ -208,13 +210,23 @@ pub fn run(ip: *Interp, login: bool, force: bool) u8 {
     while (true) {
         jobs.reapAndReport();
         ctx.known = .empty; // PATH may have changed since the last command
+        // `precmd()` runs before every prompt, like bash's PROMPT_COMMAND.
+        if (ip.globals.lookup("precmd")) |slot| {
+            if (slot.value == .func) {
+                _ = ip.callFunc(slot.value.func, null, &.{}, .{}) catch |e| {
+                    if (e == error.Raise) ip.report();
+                };
+            }
+        }
         const prompt = promptText(ip);
-        const line = editor.readLine(prompt, "... ", hooks) orelse {
+        const cont: []const u8 = if (prompts.template(ip, "PS2")) |t| prompts.render(ip, t) else "... ";
+        const line = editor.readLine(prompt, cont, hooks) orelse {
             sys.write(1, "exit\n");
             return ip.last_status;
         };
         if (std.mem.trim(u8, line, " \t\n").len == 0) continue;
         editor.addHistory(line);
+        ip.cmd_number += 1;
         const st = ip.runSource("<stdin>", mem.dupe(line), ip.globals);
         if (st != ip.last_status or true) ip.last_status = st;
         if (ip.exit_code != 0 or ip.exit_requested) return ip.exit_code;

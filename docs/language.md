@@ -1277,6 +1277,7 @@ print(replace("a.b.c", ".", "/"), upper("MiXed"), shellQuote("it's a file"))
 | `exit(status = 0)` | end the script |
 | `error(message)` | raise an error |
 | `kill(pid, sig = "TERM")`, `sleep(seconds)`, `now()`, `time(fn)`, `trap(sig, fn)` | see Signals above |
+| `expandPrompt(template)` | what `PS1` would show for a template (see The prompt) |
 | `status(cmd)` | (special form) run a command, return its exit status as an int |
 
 `date` accepts `%Y %y %C %m %d %e %H %I %k %l %M %S %p %P %A %a %B %b %h %j
@@ -1382,19 +1383,89 @@ blue, quoted text yellow, `$variables` cyan, comments grey. Set `NO_COLOR`
 
 ### The prompt
 
-The prompt is whatever the `prompt` function returns, so it can show anything
-a script can compute. If you define no `prompt`, the default is
-`user@host dir > ` (`#` instead of `>` for root). Escape sequences in the
-returned string are not counted in its width.
+dksh offers two ways to set the prompt, and you can mix them.
+
+**1. `PS1` and `PS2` with bash escapes.** Set `env.PS1` (or `var PS1`) in your
+`dkshrc.dksh`. `PS2` is the continuation prompt shown while a brace, quote or
+parenthesis is open (default `... `). A `PS1` exported by a parent shell is
+honored too.
+
+```dksh
+env.PS1 = '\[\e[32m\]\u@\h\[\e[0m\]:\[\e[34m\]\w\[\e[0m\]\$ '
+env.PS2 = '> '
+env.PROMPT_DIRTRIM = "3"       # show at most the last 3 directories in \w
+```
+
+Use **single quotes** so the backslashes and `$` reach the prompt code
+unchanged.
+
+| Escape | Expands to |
+|---|---|
+| `\u` | user name |
+| `\h`, `\H` | host name up to the first dot / the full host name |
+| `\w` | working directory, with the home directory as `~` (see `PROMPT_DIRTRIM`) |
+| `\W` | basename of the working directory (`~` in your home) |
+| `\$` | `#` for root, `$` otherwise |
+| `\t`, `\T` | time `HH:MM:SS`, 24-hour / 12-hour |
+| `\@`, `\A` | time `HH:MM AM/PM` / `HH:MM` |
+| `\d` | date, like `Sat Oct 31` |
+| `\D{format}` | time with any `date()` format: `\D{%Y-%m-%d %H:%M}` (empty braces: `%H:%M:%S`) |
+| `\j` | number of jobs the shell is managing |
+| `\!` | history number of this command |
+| `\#` | command number of this command in the session |
+| `\?` | **dksh extension:** exit status of the previous command |
+| `\s`, `\v`, `\V` | `dksh`, version `0.0`, version `0.0.1` |
+| `\l` | name of the terminal device |
+| `\n`, `\r`, `\a`, `\e` | newline, carriage return, bell, escape character |
+| `\nnn` | the character with that octal code |
+| `\\` | a backslash |
+| `\[`, `\]` | start/end of a run of non-printing characters (colors); they take no width on the line |
+
+After the escapes are expanded, dksh string interpolation runs, so a prompt
+can compute anything:
+
+```dksh
+env.PS1 = '\w ${status(test -w .) == 0 ? "" : "[ro] "}$(git branch --show-current 2>/dev/null) \$ '
+env.PS1 = '[\?] ${env.USER}@\h > '
+```
+
+`${expr}` is any dksh expression, `$name` a variable, `$(cmd)` command
+output. If the template cannot be evaluated (an undefined name, a syntax
+error), dksh prints one error and shows the template as it is, so you always
+get a prompt.
+
+**2. A `prompt()` function.** If you define `fn prompt()`, it wins over `PS1`.
+It returns the whole prompt string and may use any code. Escape sequences in
+the returned string take no width. Use `expandPrompt()` inside it to reuse the
+escapes:
 
 ```dksh
 fn prompt() {
     var branch = $(git branch --show-current 2>/dev/null)
-    var where = shortPath(cwd())
     var tag = branch == "" ? "" : " (${branch})"
-    return "\e[36m${where}\e[0m${tag} > "
+    return expandPrompt('\[\e[36m\]\w\[\e[0m\]') + tag + " > "
 }
 ```
+
+`expandPrompt(template)` returns what `PS1` would show for a template, which
+also makes a prompt easy to preview:
+
+```dksh
+print(expandPrompt('\u@\h:\w\$ '))      # dakota@box:~/src$
+```
+
+**`precmd()`.** If you define `fn precmd()`, it runs before every prompt,
+like bash's `PROMPT_COMMAND`. Use it to set the window title or refresh data
+the prompt shows:
+
+```dksh
+fn precmd() {
+    printf("\e]0;%s\e\\", shortPath(cwd()))       # terminal title (OSC 0, ST-terminated)
+}
+```
+
+If no `PS1` or `prompt` is defined, the default is `user@host dir > `
+(`#` instead of `>` for root).
 
 ### Startup files
 
