@@ -22,19 +22,62 @@ It is one static binary written in pure Zig with **no libc and no
 dependencies**, so it keeps working on a rescue system even when `/usr/lib`
 is damaged. Linux only (x86_64 and aarch64).
 
-**Status:** early. All milestones in [SPEC.md](SPEC.md) are implemented, but
+**Status:** early (0.0.x). All milestones in [SPEC.md](SPEC.md) are implemented, but
 it has had very little real-world use. Do not make it the login shell of a
-machine you cannot recover.
+machine you cannot recover. See [CHANGELOG.md](CHANGELOG.md).
 
-## Build
+## Install
 
-Needs Zig 0.17.0.
+Needs Zig 0.17.0. There is no other dependency.
 
 ```
-zig build                      # zig-out/bin/dksh
-zig build -Doptimize=ReleaseSafe
-zig build -Dtarget=aarch64-linux-none
+zig build -Doptimize=ReleaseSafe                 # zig-out/bin/dksh (about 6 MB, static)
+sudo install -m 755 zig-out/bin/dksh /usr/bin/dksh
+sudo install -m 644 zig-out/share/man/man1/dksh.1 /usr/share/man/man1/dksh.1
 ```
+
+`zig build` also installs the default startup files to `zig-out/share/dksh/`.
+Other targets: `-Dtarget=aarch64-linux-none` (cross-compiled and checked as a
+static ELF, but not yet run on ARM hardware).
+
+### As a login shell
+
+```
+echo /usr/bin/dksh | sudo tee -a /etc/shells
+sudo mkdir -p /etc/dksh && sudo cp zig-out/share/dksh/profile.dksh /etc/dksh/
+sudo useradd -m -s /usr/bin/dksh dkshtest && sudo su - dkshtest    # try it on a throwaway user first
+chsh -s /usr/bin/dksh                                              # only then
+```
+
+See "Using dksh as your login shell" in [docs/language.md](docs/language.md)
+for what runs when, and the one real catch: tools that send POSIX shell syntax
+to `$SHELL -c`.
+
+### As a Zig dependency
+
+```
+zig fetch --save https://github.com/BearzRobotics/dksh/releases/download/v0.0.1/dksh-0.0.1.tar.gz
+```
+
+```zig
+// build.zig
+const dksh = b.dependency("dksh", .{ .target = target, .optimize = optimize });
+b.installArtifact(dksh.artifact("dksh"));
+```
+
+## Features
+
+- Pipelines, redirection, globbing, job control, `&&` / `||`, command substitution.
+- A C-like language: `var`/`const`, real types, `if`/`while`/`for`, functions and
+  closures, classes with single inheritance, modules, `try`/`catch`/`finally`,
+  `trap`, `subshell`, JSON, `printf`.
+- A built-in linear-time regex engine with Unicode support (no backreferences or lookaround).
+- A line editor with history, Ctrl-R, completion (including your own
+  `complete_<cmd>` functions), history suggestions and syntax colors.
+- Bash-style `PS1`/`PS2` prompts, plus `prompt()`, `precmd()` and `preexec()`.
+- Errors that stop the script and point at the file, line and column.
+- `-x` tracing, `-n` checking, `--tree` to draw the syntax tree.
+- Scripts whose `#!` line names another interpreter (bash, sh, python) run under it.
 
 ## Test
 

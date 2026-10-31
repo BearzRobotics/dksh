@@ -16,7 +16,7 @@ const jobs = @import("jobs.zig");
 const ast = @import("ast.zig");
 const Interp = @import("interp.zig").Interp;
 
-pub const version = "0.0.1";
+pub const version = @import("build_options").version;
 
 // Markers that survive interpolation. 1 and 2 are the editor's "zero width"
 // brackets; 3 stands for `\$` until the very end so it is not interpolated.

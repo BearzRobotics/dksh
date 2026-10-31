@@ -9,7 +9,7 @@ const source = @import("source.zig");
 const interp = @import("interp.zig");
 const Interp = interp.Interp;
 
-const version = "0.0.1";
+const version = @import("build_options").version;
 
 const usage =
     \\usage: dksh [options] [script.dksh args...]

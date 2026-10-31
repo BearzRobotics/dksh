@@ -2,7 +2,7 @@
 print(expandPrompt('plain text'))
 print(expandPrompt('\\ backslash, \101\102 octal, \x unknown'))
 print(expandPrompt('line1\nline2'))
-print(expandPrompt('\s \v \V'))
+print(expandPrompt('\s'), expandPrompt('\v') =~ '^\d+\.\d+$', expandPrompt('\V') =~ '^\d+\.\d+\.\d+$')
 print(expandPrompt('status \?, jobs \j, cmd \#, hist \!'))
 print(len(expandPrompt('\e[0m')), len(expandPrompt('\a')))
 var m = expandPrompt('\[x\]')

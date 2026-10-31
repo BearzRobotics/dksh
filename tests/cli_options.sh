@@ -7,7 +7,8 @@ fail=0
 check() { # name expected actual
     if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: expected [$2] got [$3]"; fail=1; fi
 }
-check "--version" "dksh 0.0.1 (Unicode 16.0.0)" "$("$d" --version)"
+want_version="$(sed -n 's/.*\.version = "\([^"]*\)".*/\1/p' "$root/build.zig.zon")"
+check "--version matches build.zig.zon" "dksh $want_version (Unicode 16.0.0)" "$("$d" --version)"
 check "-v" "$("$d" --version)" "$("$d" -v)"
 check "-c with args" '["one", "two"]' "$("$d" -c 'print(args)' one two)"
 check "-x traces expanded argv" "+ echo 'a b' 'it'\\''s'" "$("$d" -x -c 'var f = "a b"

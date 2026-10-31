@@ -1,5 +1,8 @@
 const std = @import("std");
 
+// The version lives in build.zig.zon and nowhere else in the code.
+const zon = @import("build.zig.zon");
+
 pub fn build(b: *std.Build) void {
     // No libc, ever (SPEC 4.2): the default target is freestanding of any C runtime.
     const target = b.standardTargetOptions(.{
@@ -29,6 +32,10 @@ pub fn build(b: *std.Build) void {
     gen_run.addDirectoryArg(b.path("data/ucd"));
     const tables = gen_run.addOutputFileArg("unicode_tables.zig");
     mod.addImport("unicode_tables", b.createModule(.{ .root_source_file = tables }));
+
+    const options = b.addOptions();
+    options.addOption([]const u8, "version", zon.version);
+    mod.addOptions("build_options", options);
 
     const exe = b.addExecutable(.{ .name = "dksh", .root_module = mod });
     b.installArtifact(exe);
