@@ -748,6 +748,18 @@ Where the implementation made a choice the spec leaves open, or differs:
   (signal handlers run between statements; `EXIT` runs at shell exit),
   the process, input and JSON functions in 7.2, history suggestions, syntax
   colors and `complete_<command>` functions for per-command completion.
+- **Missing commands.** A command that cannot be found is always an error
+  (status 127), including as an `if`/`while` condition, so a typo is never a
+  silent false. Only `status(...)` turns it into the status `127`.
+- **`!` negation.** `! cmd` (or `! a | b`) swaps success and failure and is
+  exempt from the raise-on-failure rule, like a condition.
+- **Foreign shebangs.** `dksh file` where the first line is `#!interp` for an
+  interpreter other than dksh (also `#!/usr/bin/env interp`) executes that
+  interpreter on the file with the same arguments, keeping the rule that dksh
+  never parses sh or bash syntax. `-n`, `--dump-ast` and `--tree` refuse such
+  files (status 2) instead of running them.
+- **Closing braces.** A standalone `}` also ends a command when it is followed
+  by `)`, `,`, `]` or `}`, so `fn(s) { rm -f $f }` works as an argument.
 - **Parse-only mode** (`dksh -n`) also reports shadowed variables as warnings.
 
 ## 13. Open questions

@@ -700,7 +700,10 @@ pub const Parser = struct {
     fn standaloneBrace(p: *Parser, c: u8) bool {
         if (p.peekc() != c) return false;
         const n = p.at(1);
-        return n == 0 or n == ' ' or n == '\t' or n == '\n' or n == ';' or n == '\r';
+        if (n == 0 or n == ' ' or n == '\t' or n == '\n' or n == ';' or n == '\r') return true;
+        // A closing brace may be followed by what ends the enclosing expression,
+        // as in `fn(s) { rm -f $f }` passed as an argument.
+        return c == '}' and (n == ')' or n == ',' or n == ']' or n == '}');
     }
 
     /// `stop_brace`: a standalone `{` ends the command (it opens a block).
@@ -729,7 +732,14 @@ pub const Parser = struct {
     }
 
     fn parsePipeline(p: *Parser, stop_brace: bool) ParseError!ast.Pipeline {
+        p.skipWs();
         const start = p.pos;
+        var negate = false;
+        if (p.peekc() == '!' and (p.at(1) == ' ' or p.at(1) == '\t')) {
+            negate = true;
+            p.pos += 1;
+            p.skipWs();
+        }
         var cmds: std.ArrayList(ast.Command) = .empty;
         while (true) {
             cmds.append(mem.gpa, try p.parseCommand(stop_brace)) catch oom();
@@ -739,7 +749,7 @@ pub const Parser = struct {
                 p.skipNewlines();
             } else break;
         }
-        return .{ .span = p.span(start), .cmds = cmds.items };
+        return .{ .span = p.span(start), .cmds = cmds.items, .negate = negate };
     }
 
     fn parseCommand(p: *Parser, stop_brace: bool) ParseError!ast.Command {

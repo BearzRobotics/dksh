@@ -91,6 +91,8 @@ pub const Command = struct {
 pub const Pipeline = struct {
     span: Span,
     cmds: []const Command,
+    /// `! cmd`: success and failure swap, and the result never raises.
+    negate: bool = false,
 };
 
 pub const Chain = struct { and_: bool, p: Pipeline };

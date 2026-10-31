@@ -126,6 +126,7 @@ pub fn main(init: std.process.Init.Minimal) u8 {
             sys.write(2, mem.print("dksh: cannot read {s}: {s}\n", .{ path, sys.errnoText() }));
             return 127;
         };
+        if (foreignShebang(ip, path, text, rest.items, check_only or dump_ast or draw_tree)) |st| return st;
         const st = runText(ip, path, text, check_only, dump_ast, draw_tree);
         ip.runExitTrap();
         return st;
@@ -133,6 +134,51 @@ pub fn main(init: std.process.Init.Minimal) u8 {
     const st = @import("repl.zig").run(ip, login, force_interactive);
     ip.runExitTrap();
     return st;
+}
+
+/// A script whose first line is `#!interp [arg]` for something other than dksh
+/// belongs to that interpreter (SPEC 1.1: dksh never tries to run sh or bash
+/// syntax). Returns the exit status if the script was handed off or refused,
+/// null if it is a dksh script.
+fn foreignShebang(ip: *Interp, path: []const u8, text: []const u8, rest: []const []const u8, only_check: bool) ?u8 {
+    if (!std.mem.startsWith(u8, text, "#!")) return null;
+    const eol = std.mem.indexOfScalar(u8, text, '\n') orelse text.len;
+    const line = std.mem.trim(u8, text[2..eol], " \t\r");
+    var it = std.mem.tokenizeAny(u8, line, " \t");
+    const interp_path = it.next() orelse return null;
+    // Linux passes everything after the interpreter as one argument.
+    const opt_arg = std.mem.trim(u8, line[@min(line.len, interp_path.len)..], " \t");
+    var name = std.fs.path.basename(interp_path);
+    if (std.mem.eql(u8, name, "env")) {
+        var env_it = std.mem.tokenizeAny(u8, opt_arg, " \t");
+        while (env_it.next()) |tok| {
+            if (tok[0] == '-' or std.mem.indexOfScalar(u8, tok, '=') != null) continue;
+            name = std.fs.path.basename(tok);
+            break;
+        }
+    }
+    if (std.mem.eql(u8, name, "dksh")) return null;
+
+    if (only_check) {
+        sys.write(2, mem.print("dksh: {s} is a {s} script, not a dksh script; not checked\n", .{ path, name }));
+        return 2;
+    }
+    var argv: std.ArrayList(?[*:0]const u8) = .empty;
+    const add = struct {
+        fn f(list: *std.ArrayList(?[*:0]const u8), s: []const u8) void {
+            const z = sys.dupeZ(mem.gpa, s) catch return;
+            list.append(mem.gpa, z.ptr) catch {};
+        }
+    }.f;
+    add(&argv, interp_path);
+    if (opt_arg.len > 0) add(&argv, opt_arg);
+    add(&argv, path);
+    for (rest) |a| add(&argv, a);
+    argv.append(mem.gpa, null) catch return 1;
+    const z = sys.dupeZ(mem.gpa, interp_path) catch return 1;
+    const e = sys.execve(z, @ptrCast(argv.items.ptr), @import("builtins.zig").envBlock(ip));
+    sys.write(2, mem.print("dksh: cannot run {s} for {s}: {s}\n", .{ interp_path, path, @tagName(e) }));
+    return if (e == .NOENT) 127 else 126;
 }
 
 fn runText(ip: *Interp, name: []const u8, text: []const u8, check_only: bool, dump_ast: bool, draw_tree: bool) u8 {

@@ -1,0 +1,2 @@
+print(status(no-such-command-xyz), status(! no-such-command-xyz))
+try { no-such-command-xyz } catch (e) { print(e.status, e.message) }

@@ -34,7 +34,7 @@ block        = "{" , { statement-or-terminator } , "}" ;
 
 (* ---- command mode ---- *)
 commandList  = pipeline , { ( "&&" | "||" ) , pipeline } , [ "&" ] ;
-pipeline     = command , { "|" , command } ;
+pipeline     = [ "!" ] , command , { "|" , command } ;      (* "!" negates the status; never raises *)
 command      = { word | redirect } ;                                (* at least one *)
 redirect     = ( ">" | ">>" | "<" | "2>" | "2>>" | "&>" | "<<<" ) , word | "2>&1" ;
 word         = { wordPart } ;

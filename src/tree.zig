@@ -182,10 +182,16 @@ fn wordNode(w: ast.Word) *Node {
 }
 
 fn pipeNode(p: ast.Pipeline) *Node {
-    if (p.cmds.len == 1) return cmdNode(p.cmds[0]);
-    const n = node("pipeline", .{});
-    for (p.cmds) |c| n.add(cmdNode(c));
-    return n;
+    const inner: *Node = blk: {
+        if (p.cmds.len == 1) break :blk cmdNode(p.cmds[0]);
+        const n = node("pipeline", .{});
+        for (p.cmds) |c| n.add(cmdNode(c));
+        break :blk n;
+    };
+    if (!p.negate) return inner;
+    const not = node("! (negate status)", .{});
+    not.add(inner);
+    return not;
 }
 
 fn cmdNode(c: ast.Command) *Node {

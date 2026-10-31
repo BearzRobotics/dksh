@@ -189,6 +189,7 @@ fn traceCommand(argv: []const []const u8) void {
 }
 
 fn prepare(ip: *Interp, cmd: ast.Command, env: *Env, strict: bool) Error!Stage {
+    _ = strict; // kept for callers; a missing command no longer depends on it
     var argv: std.ArrayList([]const u8) = .empty;
     for (cmd.words) |w| try expandWord(ip, w, env, &argv);
 
@@ -235,7 +236,8 @@ fn prepare(ip: *Interp, cmd: ast.Command, env: *Env, strict: bool) Error!Stage {
     if (target == .missing) {
         if (searchPath(ip, name)) |p| target = .{ .external = p };
     }
-    if (target == .missing and strict) {
+    // A command that cannot be found is always an error, except inside status().
+    if (target == .missing and ip.status_depth == 0) {
         if (std.mem.indexOfScalar(u8, name, '/') != null and sys.kindOf(mem.gpa, name) != .none) {
             return ip.raiseStatus(cmd.words[0].span, 126, "permission denied: {s}", .{name});
         }
@@ -370,9 +372,18 @@ fn runInProcess(ip: *Interp, st: Stage) Error!u8 {
     return runLocal(ip, st);
 }
 
-const PipeResult = struct { status: u8, span: Span };
+const PipeResult = struct { status: u8, span: Span, exempt: bool = false };
 
 fn runPipeline(ip: *Interp, pl: ast.Pipeline, env: *Env, strict: bool) Error!PipeResult {
+    var res = try runPipelineRaw(ip, pl, env, strict);
+    if (pl.negate) {
+        res.status = if (res.status == 0) 1 else 0;
+        res.exempt = true; // `! cmd` is a test, not a failure
+    }
+    return res;
+}
+
+fn runPipelineRaw(ip: *Interp, pl: ast.Pipeline, env: *Env, strict: bool) Error!PipeResult {
     const stages = mem.gpa.alloc(Stage, pl.cmds.len) catch @panic("out of memory");
     for (pl.cmds, 0..) |c, i| stages[i] = try prepare(ip, c, env, strict);
 
@@ -454,7 +465,7 @@ pub fn runCommandList(ip: *Interp, cl: *const ast.CommandList, env: *Env, strict
         status = res.status;
         last_ran = i + 1;
     }
-    if (strict and ip.errexit and status != 0 and last_ran == cl.rest.len) {
+    if (strict and ip.errexit and status != 0 and last_ran == cl.rest.len and !res.exempt) {
         return ip.raiseStatus(res.span, status, "command failed with status {d}: {s}", .{ status, commandText(res.span) });
     }
     // Only statements update `$?`-style state; conditions and status() do not.

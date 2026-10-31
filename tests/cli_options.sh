@@ -28,4 +28,17 @@ check "--tree draws an ASCII tree" "$(printf 'Program\n`-- var x   [1:1]\n    `-
 "$d" -c >/dev/null 2>&1; check "-c without argument (status)" "2" "$?"
 check "-i reads commands from a pipe" "piped" "$(printf 'echo piped\nexit\n' | "$d" -i 2>&1 | grep -o piped | head -1)"
 "$d" /nonexistent.dksh >/dev/null 2>&1; check "missing script (status)" "127" "$?"
+# Shebang handling: a script naming another interpreter belongs to that interpreter.
+tmp="$(mktemp -d)"
+printf '#!/usr/bin/bash\narr=(1 2 3)\necho "bash ${#arr[@]} $1"\n' > "$tmp/b.sh"
+check "bash shebang runs under bash" "bash 3 x" "$("$d" "$tmp/b.sh" x)"
+printf '#!/usr/bin/env bash\nexit 7\n' > "$tmp/e.sh"
+"$d" "$tmp/e.sh"; check "env bash shebang passes the exit status" "7" "$?"
+chmod +x "$tmp/b.sh"
+check "executable bash script runs as a command" "bash 3 y" "$("$d" -c "$tmp/b.sh y")"
+printf '#!/usr/bin/env dksh\nprint("dksh", args)\n' > "$tmp/d.dksh"
+check "env dksh shebang stays dksh" 'dksh ["z"]' "$(PATH="$(dirname "$d"):$PATH" "$d" "$tmp/d.dksh" z)"
+"$d" -n "$tmp/b.sh" >/dev/null 2>&1; check "-n refuses to check a bash script (status)" "2" "$?"
+printf '#!/no/such/interp\n' > "$tmp/m.sh"; "$d" "$tmp/m.sh" >/dev/null 2>&1; check "missing interpreter (status)" "127" "$?"
+rm -rf "$tmp"
 exit $fail

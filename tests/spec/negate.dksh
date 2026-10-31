@@ -1,0 +1,9 @@
+if ! grep -q nomatchhere /etc/passwd { print("negated failure is true") }
+if ! true { print("no") } else { print("else branch") }
+! false
+! false | cat
+print(status(! true), status(! false))
+! true
+print("a negated failure does not stop the script")
+while ! test -f /nonexistent-file-xyz { print("loop once"); break }
+true && ! false && echo "chain ok"

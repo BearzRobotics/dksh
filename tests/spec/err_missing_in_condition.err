@@ -1,0 +1,5 @@
+error: command not found: grpe
+ --> err_missing_in_condition.dksh:2:4
+  |
+2 | if grpe -q root /etc/passwd { print("typo is not silently false") }
+  |    ^^^^

@@ -169,7 +169,7 @@ fn commandList(o: *Out, cl: *const ast.CommandList) void {
 }
 
 fn pipeline(o: *Out, p: ast.Pipeline) void {
-    w(o, " (pipe", .{});
+    w(o, " ({s}", .{if (p.negate) "pipe!" else "pipe"});
     for (p.cmds) |c| {
         w(o, " (cmd", .{});
         for (c.words) |wd| {

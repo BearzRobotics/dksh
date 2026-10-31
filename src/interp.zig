@@ -52,6 +52,8 @@ pub const Interp = struct {
     traps: std.AutoHashMapUnmanaged(u5, Value) = .empty,
     exit_trap: ?Value = null,
     in_trap: bool = false,
+    /// Nesting of `status(...)`: inside it a missing command is status 127, not an error.
+    status_depth: u32 = 0,
     modules: std.StringHashMapUnmanaged(Value) = .empty,
 
     pub fn init(args: []const []const u8, environ: []const [*:0]const u8) *Interp {
@@ -630,7 +632,11 @@ pub const Interp = struct {
                 if (!c.lines) return .{ .str = out };
                 return linesOf(out);
             },
-            .status => |cl| return .{ .int = try exec.runCommandList(ip, cl, env, false) },
+            .status => |cl| {
+                ip.status_depth += 1;
+                defer ip.status_depth -= 1;
+                return .{ .int = try exec.runCommandList(ip, cl, env, false) };
+            },
         }
     }
 

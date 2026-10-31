@@ -1,72 +1,809 @@
-.TH DKSH 1 "2026" "dksh" "User Commands"
+.TH DKSH 1 "2026" "dksh 0.0.1" "User Commands"
 .SH NAME
-dksh \- a Unix shell with a C-style scripting language
+dksh \- a Unix shell with a C\-style scripting language
 .SH SYNOPSIS
 .B dksh
-[\fB\-l\fR] [\fB\-n\fR] [\fB\-c\fR \fIsource\fR | \fIscript\fR [\fIargs\fR...]]
-.SH DESCRIPTION
+[\fIoptions\fR] [\fIscript\fR [\fIargs\fR...]]
+.br
 .B dksh
-is an interactive shell with pipelines, redirection, job control and tab
-completion, and a scripting language with declared variables, real types,
-braces, functions and classes. It does not run
-.BR sh (1)
-or
-.BR bash (1)
-syntax. It is a single static binary with no libc.
+[\fIoptions\fR] \fB\-c\fR \fIsource\fR [\fIargs\fR...]
+.SH DESCRIPTION
+.PP
+dksh is an interactive shell with pipelines, redirection, job control, tab completion, history and a programmable prompt, and a scripting language that reads like C instead of sh: declared variables, real types, braces, functions with named parameters, classes, regular expressions and errors that stop the script instead of being ignored.
+It is one static binary with no libc and no runtime dependencies. It does not run sh or bash syntax. A script whose first line names another interpreter (for example #!/usr/bin/bash) is handed to that interpreter; see SHEBANG.
+.PP
+This page is a reference. The full guide, with more examples, is docs/language.md in the source tree, and the exact grammar is docs/grammar.ebnf.
 .SH OPTIONS
-Short options may be combined (\fB\-nx\fR).
+.PP
+Short options may be combined (\-nx, \-xc 'echo hi'). A leading + turns an option off. Options must come before the script name; everything after it is passed to the script in the args array.
 .TP
-.BI \-c " source"
-Run the string. Remaining arguments become the \fBargs\fR array.
+\fB\-c source\fR
+Run the string as a program. Remaining arguments become args.
 .TP
-.B \-l
+\fB\-l\fR
 Login shell: read the login profile first. Implied when argv[0] starts with a dash.
 .TP
-.B \-i
+\fB\-i\fR
 Interactive even if standard input is not a terminal.
 .TP
-.B \-n
-Parse and resolve only; report syntax and name errors and shadowed variables.
+\fB\-n\fR
+Parse and resolve only. Reports syntax errors, undefined names and misuse of super.init, and warns about shadowed variables. Runs nothing.
 .TP
-.B \-x
-Trace: print each command to standard error as "+ cmd arg..." after expansion
-and before it runs, with arguments quoted.
+\fB\-x\fR
+Trace. Print each command to standard error as "+ cmd arg ..." after expansion and before it runs, with arguments quoted so word boundaries are visible.
 .TP
-.B \-e, +e
-Failed commands stop the script (default) / do not.
+\fB\-e, +e\fR
+Failed commands stop the script (the default) / do not.
 .TP
-.B \-\-dump\-ast
-Print the syntax tree instead of running.
+\fB\-\-dump\-ast\fR
+Parse and resolve, then print the syntax tree as S\-expressions with line:column, instead of running.
 .TP
-.B \-\-tree
-Like \fB\-\-dump\-ast\fR, but drawn as an ASCII tree.
+\fB\-\-tree\fR
+Like \-\-dump\-ast, but drawn as an ASCII tree.
 .TP
-.B \-v, \-\-version
-Print the version.
+\fB\-v, \-\-version\fR
+Print the version and the Unicode data version.
 .TP
-.B \-h, \-\-help
+\fB\-h, \-\-help\fR
 Print usage.
 .TP
-.B \-\-
+\fB\-\-\fR
 End of options.
+.PP
+.nf
+.RS 4
+dksh script.dksh a b          # args is ["a", "b"]
+dksh \-c 'print(1 + 2)'        # 3
+dksh \-n deploy.dksh           # check only
+dksh \-x deploy.dksh 2> t.log  # record what ran
+.RE
+.fi
+.SH SHEBANG
+.PP
+An executable script begins with an interpreter line. The kernel reads it and starts dksh; dksh treats the line as a comment.
+.PP
+.nf
+.RS 4
+#!/usr/bin/dksh
+print("hello from", args)
+.RE
+.fi
+.PP
+#!/usr/bin/env dksh also works. One group of options may follow on the line (#!/usr/bin/dksh \-x), because Linux passes everything after the interpreter as a single argument.
+.PP
+If the interpreter on the first line is not dksh, then "dksh file" runs that interpreter on the file with the same arguments instead of trying to parse it. This is how bash, sh and python scripts keep working. With \-n, \-\-dump\-ast or \-\-tree such a file is refused with status 2 and never run. A missing interpreter gives status 127.
+.PP
+.nf
+.RS 4
+$ cat backup.sh
+#!/usr/bin/bash
+files=(a b c); echo "${#files[@]} files"
+$ dksh backup.sh
+3 files
+.RE
+.fi
+.PP
+Executing a script as a command (./backup.sh, or by name from PATH) is the same: dksh asks the kernel to run it, so #!/usr/bin/bash scripts always run under bash.
+.SH LANGUAGE OVERVIEW
+.SS Commands and expressions
+.PP
+There are two modes with fixed rules. Expression mode is used inside the parentheses of if, while and for; after = in var, const and assignments and after return; inside ${...}; inside the parentheses of a function call; and inside [...] and {...} literals. Command mode is used everywhere else.
+.PP
+A statement is classified by how it starts: a keyword (var const if while for fn class return break continue try import subshell) starts that construct; a declared name followed by = += \-= *= /= ++ or \-\- (or a . or [ right after it) is an assignment; a name immediately followed by ( is a function call; anything else is a command. Assigning to a name that was never declared is an error, never a command.
+.PP
+.nf
+.RS 4
+var x = 5               # declaration
+x += 1                  # assignment
+print(x)                # function call \-> 6
+echo $x                 # command; $x becomes 6
+ls \-l > /dev/null       # '>' is a redirection
+if (x > 3) { echo big } # '>' is "greater than"
+.RE
+.fi
+.SS Source text
+.PP
+A comment runs from # to the end of the line. Statements end at a newline or ;. A backslash at the end of a line continues it, and newlines are ignored inside (), [] and {}. A statement that ends in } needs no separator before the next one.
+.PP
+Reserved words: var const if else while for in fn class extends return break continue try catch finally import as subshell true false null.
+.SH VALUES
+.TP
+\fBnull, bool\fR
+null; true and false.
+.TP
+\fBint\fR
+64\-bit signed: 42, 0x1f, 0o755, 0b101, 1_000. Overflow is an error.
+.TP
+\fBfloat\fR
+64\-bit: 3.14, 1e\-3. Printed as the shortest text that reads back identically, keeping .0 (3.0).
+.TP
+\fBstring\fR
+Bytes, expected to be UTF\-8, immutable. len counts bytes; s[i] is one byte.
+.TP
+\fBarray\fR
+[1, 2, 3]. Ordered and growable. Negative indexes count from the end.
+.TP
+\fBmap\fR
+{name: "x", "two words": 2}. Insertion ordered; bare keys are strings; a missing key is null.
+.TP
+\fBfn\fR
+fn(x) { return x }. First class; closures capture variables by reference.
+.TP
+\fBregex\fR
+regex('^\d+$'). A compiled regular expression.
+.TP
+\fBobject\fR
+An instance of a class.
+.PP
+There is no implicit conversion except into strings (interpolation and command arguments): "5" + 1 is an error; use int("5") + 1. Conditions, !, && and || need real bools. == compares numbers by value (1 == 1.0), strings by content, arrays and maps structurally, objects and functions by identity. Arrays, maps and objects are reference values.
+.SH VARIABLES AND SCOPE
+.PP
+var declares a mutable variable and const an immutable one; both need an initial value. Scope is lexical and block based, and shadowing an outer variable is allowed (\-n warns). Shell variables are not environment variables: the environment is the env map, and assigning to env.NAME exports it to commands started afterwards. In command mode $name looks up a variable first, then env. args is the array of script arguments.
+.PP
+.nf
+.RS 4
+const limit = 10
+var n = 0
+env.GREETING = "hello"
+sh \-c 'echo $GREETING'      # hello
+print(env.HOME, env["PATH"])
+.RE
+.fi
+.SH STRINGS
+.TP
+\fB"double"\fR
+Interpolates $name and ${expression}. Escapes: \en \et \er \e0 \ee \e\e \e" \e$ \eu{263A}.
+.TP
+\fB'single'\fR
+Literal; no escapes and no interpolation.
+.TP
+\fB"""triple"""\fR
+Multi\-line, interpolates, drops the newline after the opening quotes, a closing\-quotes\-only last line, and the common leading indentation.
+.PP
+.nf
+.RS 4
+var name = "world"
+print("hello ${name}! ${1 + 2} $name")   # hello world! 3 world
+print('no $interpolation here')
+print("""
+    indented
+      more
+    """)                                # indented\en  more
+.RE
+.fi
+.SH OPERATORS
+.PP
+From highest to lowest precedence:
+.TP
+\fB() [] .\fR
+call, index, member (left)
+.TP
+\fB! unary\-\fR
+right
+.TP
+\fB* / %\fR
+left. / on two ints is integer division; division by zero is an error.
+.TP
+\fB+ \-\fR
+left. + also joins strings and arrays.
+.TP
+\fB< <= > >= in\fR
+left. in tests an array element, a map key or a substring.
+.TP
+\fB== != =~ !~\fR
+left. =~ matches a string against a regex or string pattern.
+.TP
+\fB&&\fR
+left, short\-circuit, bools only
+.TP
+\fB||\fR
+left, short\-circuit, bools only
+.TP
+\fB? :\fR
+right
+.PP
+Assignment operators: = += \-= *= /= ++ \-\-.
+.PP
+.nf
+.RS 4
+print(1 + 2 * 3, 7 / 2, \-7 % 3)           # 7 3 \-1
+print(1 < 2 ? "yes" : "no")              # yes
+print("a" in ["a", "b"], "k" in {k: 1})  # true true
+if (line =~ '^\es*#') { print("comment") }
+.RE
+.fi
+.SH CONTROL FLOW
+.PP
+if, else if, else, while and for. The condition is either ( expression ) or a command, which is true when it exits with status 0 and whose failure does not stop the script. ! before a command negates its status. break and continue work in all loops.
+.PP
+.nf
+.RS 4
+if (n < 5) { print("small") } else if (n < 10) { print("medium") } else { print("large") }
+if grep \-q root /etc/passwd { print("root exists") }
+if ! test \-f /etc/motd { print("no motd") }
+while (i < 10) { i += 1; if (i == 3) { continue } }
+for (item in ["a", "b"]) { print(item) }
+for (var i = 0; i < 3; i++) { print(i) }
+for (key in someMap) { print(key) }
+.RE
+.fi
+.SH FUNCTIONS
+.PP
+fn name(params) { ... }. Parameters may have defaults, which can use earlier parameters. A wrong number of arguments is an error. A function without return returns null. Functions are values, are hoisted within their block, and close over their variables by reference. Calls nested deeper than 600 raise a stack overflow error.
+.PP
+A function can be called as an expression, or as a command: then every argument is a string, its output is whatever it prints, and its status is 0 unless it raises an error. This lets functions sit in pipelines; inside a pipeline or a background job a function runs in a forked child, so its variable changes do not persist.
+.PP
+.nf
+.RS 4
+fn greet(name, greeting = "Hello") { return "${greeting}, ${name}!" }
+print(greet("Dakota"))                 # Hello, Dakota!
+fn show(a, b = "dflt") { print("show:", a, b) }
+show one two | tr a\-z A\-Z              # SHOW: ONE TWO
+fn counter() { var c = 0; return fn() { c += 1; return c } }
+.RE
+.fi
+.SH RUNNING COMMANDS
+.SS Words
+.PP
+Three rules fix the worst of bash. There is no word splitting: $file is always exactly one argument. Splicing is explicit: @list expands an array into one argument per element, and $list on an array is an error. A glob that matches nothing is an error, not a literal; quoted words are never globbed.
+.TP
+\fB$name, $name.field\fR
+Variable, then env. .field applies only if the value is a map or object, so cp $f $f.bak works.
+.TP
+\fB${expr}\fR
+Any expression, converted to a string.
+.TP
+\fB$(cmd)\fR
+Output of cmd as a string, one trailing newline removed.
+.TP
+\fB@(cmd)\fR
+Output of cmd as an array of lines, spliced as separate arguments (whole word only).
+.TP
+\fB@name\fR
+Splice an array (whole word only).
+.TP
+\fB~, ~user\fR
+Home directory (start of a word only).
+.TP
+\fB* ? [abc] [a\-z] [!x]\fR
+Glob characters (unquoted only). Results are sorted; names starting with . need a leading . in the pattern. There is no brace expansion and no **.
+.PP
+.nf
+.RS 4
+const f = "a file.txt"
+printf '[%s]\en' $f             # [a file.txt]  one argument
+var words = ["one two", "three"]
+printf '[%s]\en' @words         # [one two] [three]
+var lines = @(ls /etc)
+echo *.txt  "*.txt"            # expanded; literal
+.RE
+.fi
+.SS Pipelines and lists
+.PP
+a | b connects standard output to standard input; the pipeline fails if any command in it fails (an upstream command killed by SIGPIPE, as in yes | head, does not count). a && b runs b only if a succeeded and a || b only if it failed. cmd & runs in the background. A standalone } word always ends a command.
+.SS Redirection
+.TP
+\fB> file, >> file\fR
+Standard output to a file (truncate / append).
+.TP
+\fB< file\fR
+Standard input from a file.
+.TP
+\fB2> file, 2>> file\fR
+Standard error to a file.
+.TP
+\fB&> file\fR
+Standard output and standard error to a file.
+.TP
+\fB2>&1\fR
+Standard error to wherever standard output goes.
+.TP
+\fB<<< word\fR
+Send a string as standard input (a newline is added).
+.PP
+.nf
+.RS 4
+sort < in.txt > out.txt 2> err.log
+make &> build.log
+cat <<< "here string"
+cmd > /nonexistent/file     # one error pointing at the file
+.RE
+.fi
+.PP
+There are no here\-documents; use a multi\-line string with <<<.
+.SS Capturing output and status
+.PP
+.nf
+.RS 4
+var host = $(hostname)                 # string
+var lines = @(printf 'a\enb\en')          # ["a", "b"]
+print(status(false), status(sh \-c 'exit 7'))   # 1 7
+print(status(no\-such\-command))          # 127
+.RE
+.fi
+.PP
+status(cmd) runs a command and returns its exit status as an int without raising an error. It is also the only place where a command that cannot be found yields 127 instead of an error.
+.SH BUILTIN COMMANDS
+.PP
+These run inside the shell because they change its state. The first word of a command is looked up as a user function, then a builtin command, then an executable in PATH (or the given path, if it contains a slash).
+.TP
+\fBcd [dir]\fR
+Change directory. No argument means $HOME; \- means the previous directory. Sets env.PWD and env.OLDPWD.
+.TP
+\fBexit [n]\fR
+Exit with status n (default: the last status).
+.TP
+\fBsource file\fR
+Run a file in the current global scope.
+.TP
+\fBjobs, fg [%n], bg [%n], wait [%n], disown [%n]\fR
+Job control; see JOB CONTROL.
+.TP
+\fBexec cmd args...\fR
+Replace the shell with cmd.
+.TP
+\fBhistory\fR
+Print the command history.
+.TP
+\fBtype name...\fR
+Say whether each name is a function, a builtin or a file.
+.TP
+\fBumask [mode]\fR
+Show or set the file creation mask (octal).
+.SH ERRORS
+.PP
+In a script a command that exits non\-zero raises an error, which stops the script unless it is caught. The exceptions are a command used as the condition of if or while, on the left of && or ||, negated with !, or inside status(...). At the interactive prompt, errors are reported and the prompt returns; the shell never exits because a command failed. Every error shows the file, line, column and the source line:
+.PP
+.nf
+.RS 4
+error: command failed with status 1: grep \-q root /etc/shadow
+  \-\-> backup.dksh:14:5
+   |
+14 |     grep \-q root /etc/shadow
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+.RE
+.fi
+.SS try, catch, finally
+.PP
+try { ... } catch (e) { ... } finally { ... }. In the handler e is a map with message, status (the exit status, or null for script errors), file, line and column. finally runs however the body ends: success, a caught or uncaught error, return, break or continue. Either clause may be left out, but not both. An error raised inside finally replaces the pending one. error("message") raises an error from script code.
+.PP
+.nf
+.RS 4
+try {
+    mount $dev /mnt
+    backup("/mnt")
+} catch (e) {
+    printErr("failed: ${e.message} (${e.file}:${e.line})")
+} finally {
+    umount /mnt
+}
+.RE
+.fi
+.SS Signals and subshells
+.PP
+trap(signal, fn) registers a function that runs between statements when the signal arrives (a running foreground command finishes first); it receives the signal name. trap("EXIT", fn) runs when the shell exits, including after an error. trap(signal) or trap(signal, null) restores the default. Signals: HUP INT QUIT USR1 USR2 PIPE ALRM TERM CHLD CONT TSTP WINCH, by name with or without SIG, or by number. KILL and STOP cannot be trapped.
+.PP
+subshell { ... } runs the block in a forked child, so cd, variable changes, env changes and exit stay inside it. A non\-zero status raises an error.
+.PP
+.nf
+.RS 4
+trap("EXIT", fn(sig) { rm \-f $lockfile })
+trap("INT", fn(sig) { print("interrupted"); exit(130) })
+subshell { cd /tmp; print(cwd()) }     # the parent stays where it was
+.RE
+.fi
+.SH CLASSES
+.PP
+Classes are optional. A class has fields (var name = default) and methods (fn). self is the instance inside methods. Calling the class name constructs an instance and runs init with the arguments. Fields not declared in the class cannot be added; reading or assigning an unknown field is an error. Objects compare by identity, and str(obj) calls toString() if defined. Inheritance is single: class Child extends Base; a method with the same name overrides the parent's, super.name(...) calls the parent's, and a child init must call super.init(...) if the parent has one (checked before the script runs). Redeclaring a parent's field is an error. isInstance(obj, Class) is true for the class and its subclasses.
+.PP
+.nf
+.RS 4
+class Mount {
+    var device = ""
+    fn init(device) { self.device = device }
+    fn describe() { return "mount of ${self.device}" }
+}
+class UsbMount extends Mount {
+    var label = ""
+    fn init(device, label) { super.init(device); self.label = label }
+    fn describe() { return super.describe() + " (${self.label})" }
+}
+var u = UsbMount("/dev/sdb1", "STICK")
+print(u.describe())                    # mount of /dev/sdb1 (STICK)
+print(isInstance(u, Mount))            # true
+.RE
+.fi
+.SH MODULES
+.PP
+import "path" as name runs a file once and binds its top\-level const, fn and class declarations under name; var declarations stay private. A path containing a slash is relative to the importing file. A bare name is searched in $XDG_DATA_HOME/dksh/lib (default ~/.local/share/dksh/lib) and /usr/share/dksh/lib.
+.PP
+.nf
+.RS 4
+import "lib/disks.dksh" as disks
+print(disks.version, disks.listDevices())
+.RE
+.fi
+.SH REGULAR EXPRESSIONS
+.PP
+dksh has its own regular expression engine, guaranteed to run in time linear in the length of the input, so a bad pattern cannot hang the shell. Backreferences and lookaround are rejected when the pattern is compiled, with an error pointing at the offending part. Use single quotes for patterns so backslashes need no doubling.
+.SS Methods
+.TP
+\fBregex(pattern, flags = "")\fR
+A compiled regex; an invalid pattern is an error.
+.TP
+\fBre.test(s)\fR
+bool.
+.TP
+\fBre.match(s)\fR
+null, or a map: key 0 (m[0]) is the whole match, 1... are groups, named groups by name, plus start and end byte offsets. An unmatched optional group is null.
+.TP
+\fBre.matchAll(s)\fR
+Array of match maps.
+.TP
+\fBre.replace(s, replacement, count = 0)\fR
+String. $1, ${name} and $$ in the replacement refer to groups; a function receives the match map. count 0 means all.
+.TP
+\fBre.split(s, limit = 0)\fR
+Array of strings.
+.SS Syntax
+.TP
+\fBLiterals and escapes\fR
+a  \e.  \en \et \er \ef \ev \ea \ee  \ex41  \ex{41}  \eu{263A}
+.TP
+\fBAny character\fR
+\&. (not newline unless flag s)
+.TP
+\fBClasses\fR
+[abc] [^a\-z]  \ed \eD \ew \eW \es \eS  [[:alpha:]] [[:^digit:]]
+.TP
+\fBAnchors\fR
+^ $ (per line with flag m), \eA \ez, \eb \eB
+.TP
+\fBQuantifiers\fR
+* + ? {n} {n,} {n,m}; lazy forms *? +? ?? {n,m}?
+.TP
+\fBGroups\fR
+( ) capturing, (?: ) non\-capturing, (?<name> ) named
+.TP
+\fBAlternation\fR
+a|b. The leftmost alternative that matches wins.
+.SS Flags
+.TP
+\fBi\fR
+case insensitive
+.TP
+\fBm\fR
+^ and $ match at line boundaries
+.TP
+\fBs\fR
+\&. matches newline
+.TP
+\fBx\fR
+extended: whitespace and # comments in the pattern are ignored
+.TP
+\fBu\fR
+Unicode: \ew \ed \es \eb follow Unicode, i uses Unicode case folding, and \ep{...} / \eP{...} match general categories (\ep{L}, \ep{Lu}) and scripts (\ep{Greek}). The tables come from Unicode 16.0.
+.PP
+.nf
+.RS 4
+const kv = regex('^(?<key>\ew+)\es*=\es*(?<value>.*)$', "m")
+var m = kv.match("name = dakota")
+print(m.key, m.value, m[0], m.start)        # name dakota name = dakota 0
+if (env.HOME =~ '^/root') { print("root") }
+print(regex('(\ew)(\ed)').replace("a1 b2", '$2$1'))   # 1a 2b
+print(regex('^\ep{Lu}', "u").test("\eu{c4}"))       # true
+.RE
+.fi
+.SH FORMATTED OUTPUT
+.PP
+print(a, b, ...) writes its arguments separated by spaces and a newline; printErr does the same to standard error. printf(format, ...) and sprintf(format, ...) follow C format strings: flags \- + space # 0; width and precision, including *; conversions d i u o x X f F e E g G a A c s and %; length modifiers (l, ll, h, z, ...) are accepted and ignored because every int is 64\-bit. %n is not supported, and a conversion that does not match its argument's type (%d with a string) is an error.
+.PP
+.nf
+.RS 4
+printf("%5d|%\-5d|%05d|%+d\en", 42, 42, 42, 42)
+printf("%.2f %e %x %#o\en", 3.14159, 1234.5, 255, 8)
+var s = sprintf("%03d\-%s", 7, "x")           # 007\-x
+.RE
+.fi
+.SH BUILTIN FUNCTIONS
+.PP
+Names are camelCase. They are callable from expressions.
+.SS Input and output
+.TP
+\fBprint, printErr, printf, sprintf\fR
+See FORMATTED OUTPUT.
+.TP
+\fBreadLine(prompt = "")\fR
+Read a line from standard input; null at end of input.
+.TP
+\fBreadPassword(prompt = "")\fR
+Like readLine with terminal echo off.
+.TP
+\fBreadLines(path = "\-")\fR
+The lines of a file, or of standard input for "\-" or no argument. Handles \er\en.
+.TP
+\fBreadStdin()\fR
+All of standard input as a string.
+.SS Types
+.TP
+\fBtype(v)\fR
+"null", "bool", "int", "float", "string", "array", "map", "fn", "regex", "class", or the class name.
+.TP
+\fBint(v), float(v)\fR
+Conversions. int accepts floats (truncating), bools and strings ("42", "0x1f", "1_000").
+.TP
+\fBstr(v)\fR
+Text form; calls toString() on objects.
+.TP
+\fBbool(v)\fR
+False for null, false, 0, 0.0, "", [] and {}.
+.TP
+\fBisInstance(obj, Class)\fR
+True for the class and its subclasses.
+.SS Collections
+.TP
+\fBlen(v)\fR
+Length of a string (bytes), array or map.
+.TP
+\fBpush(arr, v), pop(arr)\fR
+Append; remove and return the last element.
+.TP
+\fBkeys(map), values(map)\fR
+Arrays, in order.
+.TP
+\fBsort(arr, cmp = null)\fR
+A new sorted array. cmp(a, b) returns a negative, zero or positive int.
+.TP
+\fBmap(arr, fn), filter(arr, fn)\fR
+New arrays.
+.SS Strings
+.TP
+\fBsplit(s, sep), join(arr, sep)\fR
+split with "" gives characters.
+.TP
+\fBtrim(s)\fR
+Strip whitespace at both ends.
+.TP
+\fBstartsWith(s, p), endsWith(s, p), contains(s, sub)\fR
+Tests.
+.TP
+\fBreplace(s, old, new)\fR
+Replace every occurrence.
+.TP
+\fBupper(s), lower(s)\fR
+ASCII case conversion.
+.TP
+\fBshellQuote(s)\fR
+s as one word that sh and dksh read back unchanged.
+.SS Files and paths
+.TP
+\fBexists(p), isFile(p), isDir(p)\fR
+Tests.
+.TP
+\fBreadFile(p), writeFile(p, s), appendFile(p, s)\fR
+Whole\-file I/O; failures raise errors.
+.TP
+\fBbaseName(p), dirName(p)\fR
+Path pieces.
+.TP
+\fBglob(pattern)\fR
+Sorted array of matches (empty if none).
+.TP
+\fBshortPath(p)\fR
+Replace the home directory prefix with ~.
+.SS System, processes and time
+.TP
+\fBcwd(), hostName(), pid()\fR
+Current directory, host name, process id.
+.TP
+\fBdate(format = "%Y\-%m\-%d %H:%M:%S")\fR
+Local time. Supports %Y %y %C %m %d %e %H %I %k %l %M %S %p %P %A %a %B %b %h %j %u %w %U %W %V %G %Z %z %s %F %T %R %D %c %x %X %n %t %%, and a \- flag (%\-d). TZ and /etc/localtime are honored.
+.TP
+\fBexit(status = 0), error(message)\fR
+End the script; raise an error.
+.TP
+\fBkill(pid, sig = "TERM")\fR
+Send a signal; a negative pid signals a process group.
+.TP
+\fBsleep(seconds), now(), time(fn)\fR
+Pause (int or float); seconds since the epoch as a float; run fn() and return the seconds it took.
+.TP
+\fBtrap(sig, fn)\fR
+See ERRORS, Signals and subshells.
+.TP
+\fBstatus(cmd)\fR
+(special form) Run a command and return its exit status.
+.SS JSON
+.TP
+\fBjsonParse(s)\fR
+Objects become maps (key order kept); integers that fit stay int. Errors report a byte offset.
+.TP
+\fBjsonStringify(v, indent = 0)\fR
+Compact, or pretty\-printed with an indent of 1 to 16. Functions, objects and NaN are errors.
+.PP
+.nf
+.RS 4
+var cfg = jsonParse('{"name": "dksh", "port": 8080}')
+cfg.port += 1
+print(jsonStringify(cfg))              # {"name":"dksh","port":8081}
+.RE
+.fi
+.SH INTERACTIVE USE
+.PP
+Run dksh on a terminal. The line editor, history and completion are built in.
+.SS Editing keys
+.TP
+\fBCtrl\-A, Ctrl\-E, Home, End\fR
+Start or end of line. At the end of the line they accept the history suggestion.
+.TP
+\fBCtrl\-B, Ctrl\-F, Left, Right\fR
+One character. Right at the end accepts the suggestion.
+.TP
+\fBAlt\-B, Alt\-F, Ctrl\-Left, Ctrl\-Right\fR
+One word.
+.TP
+\fBCtrl\-D\fR
+Delete the character under the cursor; exit on an empty line.
+.TP
+\fBBackspace, Ctrl\-H, Delete\fR
+Delete backwards or forwards.
+.TP
+\fBCtrl\-K, Ctrl\-U\fR
+Kill to end or start of line.
+.TP
+\fBCtrl\-W, Alt\-Backspace, Alt\-D\fR
+Kill the previous or next word.
+.TP
+\fBCtrl\-Y, Ctrl\-T\fR
+Paste the last killed text; swap the characters around the cursor.
+.TP
+\fBCtrl\-L, Ctrl\-C\fR
+Clear the screen; cancel the line.
+.TP
+\fBUp, Down, Ctrl\-P, Ctrl\-N\fR
+History. With text already typed, only entries that start with it.
+.TP
+\fBCtrl\-R\fR
+Incremental history search; Ctrl\-R again for older matches, Enter to run, Ctrl\-G to cancel.
+.TP
+\fBTab\fR
+Complete; press twice to list candidates.
+.TP
+\fBEnter\fR
+Run the line. If a brace, quote or parenthesis is unclosed, continue on the next line.
+.SS Completion
+.PP
+At the start of a command: keywords, builtins, functions, variables, library functions and executables in PATH. In arguments: files and directories, quoted correctly when they contain spaces. After $ or ${: variable names. After a dot on a variable: fields and methods. For a command named deploy, a user function complete_deploy(words, word) may return an array of candidate strings (words are the command's words so far, word the one being completed); returning null falls back to file names.
+.PP
+.nf
+.RS 4
+fn complete_deploy(words, word) {
+    if (len(words) == 1) { return ["staging", "production"] }
+    return null
+}
+.RE
+.fi
+.SS Suggestions and colors
+.PP
+A grey suggestion from history follows the cursor. Command words are green when they resolve to a function, builtin or executable and red when they do not; keywords are blue, quoted text yellow, $variables cyan and comments grey. Both are off when NO_COLOR is set or TERM is dumb.
+.SS The prompt
+.PP
+The prompt is whatever the prompt function returns. If none is defined, the default is user@host dir > (# instead of > for root). Escape sequences in the returned string take no width.
+.PP
+.nf
+.RS 4
+fn prompt() {
+    return "\ee[36m${shortPath(cwd())}\ee[0m > "
+}
+.RE
+.fi
+.SS Startup files
+.TP
+\fB/etc/dksh/profile.dksh, $XDG_CONFIG_HOME/dksh/profile.dksh\fR
+Read by login shells.
+.TP
+\fB/etc/dksh/dkshrc.dksh, $XDG_CONFIG_HOME/dksh/dkshrc.dksh\fR
+Read by interactive shells.
+.PP
+Scripts read none of these. dksh never reads /etc/profile, which is sh syntax. XDG_CONFIG_HOME defaults to ~/.config. There are no aliases; define functions instead (fn ll(dir = ".") { ls \-la $dir }).
+.SH JOB CONTROL
+.PP
+Every pipeline runs in its own process group and the foreground job owns the terminal. Ctrl\-C interrupts the foreground job, not the shell; Ctrl\-Z stops it. jobs lists jobs, fg and bg resume one (the most recent, or %n), wait waits, and disown forgets one. When a background job finishes the shell reports it before the next prompt. In scripts job control is off: Ctrl\-C ends the script, and & just runs in the background.
+.PP
+.nf
+.RS 4
+> sleep 100
+^Z
+[1]+  Stopped    sleep 100
+> bg
+[1]+  Running    sleep 100
+> fg
+sleep 100
+.RE
+.fi
 .SH EXIT STATUS
-0 on success; 1 for a runtime error or failed command; 2 for a syntax or name error.
+.TP
+\fB0\fR
+Success.
+.TP
+\fB1\fR
+A runtime error or a failed command.
+.TP
+\fB2\fR
+A syntax or name error, a bad option, or a non\-dksh script given to \-n.
+.TP
+\fB126, 127\fR
+A file could not be executed; a command or script interpreter was not found.
+.PP
+exit(n) and exit n end a script with status n. A command killed by a signal has status 128 plus the signal number.
 .SH FILES
 .TP
-.I /etc/dksh/profile.dksh, $XDG_CONFIG_HOME/dksh/profile.dksh
-Login shells.
+\fB/etc/dksh/profile.dksh, $XDG_CONFIG_HOME/dksh/profile.dksh\fR
+Login startup files.
 .TP
-.I /etc/dksh/dkshrc.dksh, $XDG_CONFIG_HOME/dksh/dkshrc.dksh
-Interactive shells.
+\fB/etc/dksh/dkshrc.dksh, $XDG_CONFIG_HOME/dksh/dkshrc.dksh\fR
+Interactive startup files.
 .TP
-.I $XDG_STATE_HOME/dksh/history
-Command history.
+\fB$XDG_STATE_HOME/dksh/history\fR
+Command history, shared between sessions (default ~/.local/state/dksh/history).
 .TP
-.I $XDG_DATA_HOME/dksh/lib, /usr/share/dksh/lib
+\fB$XDG_DATA_HOME/dksh/lib, /usr/share/dksh/lib\fR
 Module search path for bare import names.
 .SH ENVIRONMENT
 .TP
-.B NO_COLOR
-Disable syntax colors and history suggestions in the line editor (also off when TERM is dumb).
+\fBHOME, PATH, PWD, OLDPWD, USER, TZ\fR
+Used as usual. They live in the env map.
+.TP
+\fBXDG_CONFIG_HOME, XDG_STATE_HOME, XDG_DATA_HOME\fR
+Locations of the files above.
+.TP
+\fBNO_COLOR, TERM\fR
+Colors and suggestions are disabled if NO_COLOR is set or TERM is dumb.
+.TP
+\fBDKSH_GC_STRESS\fR
+For testing: run the garbage collector every N allocations.
+.SH EXAMPLES
+.PP
+Back up each directory and report failures without stopping:
+.PP
+.nf
+.RS 4
+#!/usr/bin/dksh
+var failed = []
+for (d in glob("/home/*")) {
+    try {
+        tar \-czf "/mnt/backup/${baseName(d)}.tar.gz" $d
+    } catch (e) {
+        push(failed, d)
+    }
+}
+if (len(failed) > 0) {
+    printErr("failed: ${join(failed, ", ")}")
+    exit(1)
+}
+.RE
+.fi
+.PP
+Read JSON from a pipe and print one field:
+.PP
+.nf
+.RS 4
+$ curl \-s https://example.org/api | dksh \-c 'print(jsonParse(readStdin()).version)'
+.RE
+.fi
+.PP
+See what a script really runs:
+.PP
+.nf
+.RS 4
+$ dksh \-x deploy.dksh 2>&1 | grep '^+ rsync'
+.RE
+.fi
+.SH BUGS
+.PP
+This project was written by an AI under human direction and has had little real\-world use; expect bugs, in particular in the garbage collector and the line editor. Wide characters (CJK, emoji) can misalign a wrapped input line. Trap handlers run only between statements. There are no aliases, here\-documents, eval, brace expansion, process substitution or lazy line iterators. Functions used as commands inside pipelines run in a forked child.
+.PP
+Report problems at the project's source repository.
 .SH SEE ALSO
-The language guide, docs/language.md, and SPEC.md in the source tree.
+.PP
+sh(1), bash(1), docs/language.md, docs/grammar.ebnf and SPEC.md in the source tree.

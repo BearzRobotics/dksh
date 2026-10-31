@@ -1,0 +1,3 @@
+echo before
+if grpe -q root /etc/passwd { print("typo is not silently false") }
+echo not reached
