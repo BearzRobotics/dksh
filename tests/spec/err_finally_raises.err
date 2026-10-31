@@ -1,0 +1,5 @@
+error: failed in cleanup
+ --> err_finally_raises.dksh:1:33
+  |
+1 | try { print("body") } finally { error("failed in cleanup") }
+  |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^

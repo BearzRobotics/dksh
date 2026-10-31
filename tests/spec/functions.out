@@ -1,0 +1,10 @@
+Hello, Dakota! Howdy, Dakota!
+3628800
+3
+42
+show: one dflt
+show: one two
+show: Dakota dflt
+FROM A FUNCTION
+null
+hoisted ok

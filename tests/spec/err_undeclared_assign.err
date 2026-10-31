@@ -1,0 +1,5 @@
+error: `total` is not declared; use `var total = 5`
+ --> err_undeclared_assign.dksh:2:1
+  |
+2 | total = 5
+  | ^

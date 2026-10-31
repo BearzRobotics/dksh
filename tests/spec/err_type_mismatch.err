@@ -1,0 +1,5 @@
+error: cannot apply `+` to string and int
+ --> err_type_mismatch.dksh:1:7
+  |
+1 | print("5" + 1)
+  |       ^^^^^^^

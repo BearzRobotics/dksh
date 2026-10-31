@@ -1,0 +1,18 @@
+body
+caught oops
+cleanup 1
+no error
+cleanup 2
+cleanup on return
+returned
+cleanup then propagate
+outer got inner
+i 0
+f 0
+f 1
+i 2
+f 2
+c
+fin
+finally after failing handler
+b from handler

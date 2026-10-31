@@ -1,0 +1,5 @@
+error: negative value: -4
+ --> err_raise.dksh:2:18
+  |
+2 |     if (v < 0) { error("negative value: ${v}") }
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

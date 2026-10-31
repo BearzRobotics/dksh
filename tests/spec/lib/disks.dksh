@@ -1,0 +1,8 @@
+const version = "1.0"
+var private = "not exported"
+fn listDevices() { return ["sda", "sdb"] }
+class Device {
+    var name = ""
+    fn init(n) { self.name = n }
+}
+print("module loaded once")

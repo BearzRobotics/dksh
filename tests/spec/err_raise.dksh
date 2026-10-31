@@ -1,0 +1,6 @@
+fn check(v) {
+    if (v < 0) { error("negative value: ${v}") }
+    return v
+}
+print(check(1))
+print(check(-4))

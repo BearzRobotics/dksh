@@ -1,0 +1,5 @@
+error: no matches for glob pattern: /nonexistent-dir/*.zzz
+ --> glob_nomatch.dksh:2:6
+  |
+2 | echo /nonexistent-dir/*.zzz
+  |      ^^^^^^^^^^^^^^^^^^^^^^

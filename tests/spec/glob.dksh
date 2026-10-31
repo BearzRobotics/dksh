@@ -1,0 +1,11 @@
+var d = $(mktemp -d)
+cd $d
+touch b.txt a.txt c.log .hidden "star*.txt"
+echo *.txt
+echo "*.txt"
+echo '*.txt'
+echo [ab].txt
+echo ?.log
+var m = glob("*.txt")
+print(len(m), m[0])
+rm -rf $d

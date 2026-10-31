@@ -1,0 +1,3 @@
+echo before
+false | cat
+echo not reached

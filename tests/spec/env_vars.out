@@ -1,0 +1,5 @@
+child sees exported
+exported exported null
+child local=[]
+exported shell var
+shadowed

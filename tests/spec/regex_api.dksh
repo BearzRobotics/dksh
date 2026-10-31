@@ -1,0 +1,19 @@
+const kv = regex('^(?<key>\w+)\s*=\s*(?<value>.*)$', "m")
+var m = kv.match("name = dakota")
+print(m.key, "->", m.value, m[0], m[1], m.start, m.end)
+print(kv.match("# comment"))
+print(kv.test("a=b"), kv.test("=="))
+print(regex('\d+').matchAll("a1b22c333"))
+print(regex('(\w)(\d)').replace("a1 b2 c3", "$2$1"))
+print(regex('(\w)(\d)').replace("a1 b2 c3", '<${1}>', 2))
+print(regex('\d').replace("a1b2", fn(m) { return "[" + m[0] + "]" }))
+print(regex('\s*,\s*').split("a , b,c ,d"))
+print(regex(',').split("a,b,c", 2))
+if ("line # comment" =~ '#') { print("matches") }
+if ("abc" !~ '^\d+$') { print("not digits") }
+print(regex('^\p{Lu}', "u").test("Ä"), regex('^\p{Lu}', "u").test("ä"))
+print(regex('hello', "i").test("HeLLo"))
+print(regex('^b', "m").test("a\nb"), regex('a.b', "s").test("a\nb"), regex('a.b').test("a\nb"))
+try { regex('(a)\1') } catch (e) { print("rejected:", e.message) }
+try { regex('(?=a)') } catch (e) { print("rejected lookahead") }
+print(regex('(a*)*b').test("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac"))

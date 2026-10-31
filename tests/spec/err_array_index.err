@@ -1,0 +1,5 @@
+error: index 3 out of range (length 3)
+ --> err_array_index.dksh:2:9
+  |
+2 | print(a[3])
+  |         ^

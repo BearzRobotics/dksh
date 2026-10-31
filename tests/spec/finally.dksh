@@ -1,0 +1,11 @@
+fn work() {
+    try { print("body"); error("oops") } catch (e) { print("caught", e.message) } finally { print("cleanup 1") }
+    try { print("no error") } finally { print("cleanup 2") }
+}
+work()
+fn early() { try { return "returned" } finally { print("cleanup on return") } }
+print(early())
+try { try { error("inner") } finally { print("cleanup then propagate") } } catch (e) { print("outer got", e.message) }
+for (var i = 0; i < 3; i++) { try { if (i == 1) { continue } print("i", i) } finally { print("f", i) } }
+try { error("first") } catch (e) { print("c") } finally { print("fin") }
+try { try { error("a") } catch (e) { error("b from handler") } finally { print("finally after failing handler") } } catch (e) { print(e.message) }

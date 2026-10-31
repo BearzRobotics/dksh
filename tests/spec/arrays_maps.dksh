@@ -1,0 +1,14 @@
+var a = [3, 1, 2]
+push(a, 4)
+print(a, len(a), pop(a), a[0], a[-1])
+a[0] = 10
+print(a, sort(a), sort(a, fn(x, y) { return y - x }))
+var m = {name: "dksh", "two words": 2}
+m.extra = true
+m["k"] = [1]
+print(m, keys(m), values(m), len(m))
+print(m.name, m["two words"], m.missing)
+print("name" in m, "zzz" in m, 2 in a, 99 in a)
+print(map([1, 2, 3], fn(x) { return x * x }), filter([1, 2, 3, 4], fn(x) { return x % 2 == 0 }))
+for (k in m) { printf("%s;", k) }
+print()

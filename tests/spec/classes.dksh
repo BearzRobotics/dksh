@@ -1,0 +1,38 @@
+class Mount {
+    var device = ""
+    var point = ""
+    fn init(device, point) {
+        self.device = device
+        self.point = point
+    }
+    fn describe() { return "${self.device} on ${self.point}" }
+    fn mount() { print("mount", self.describe()) }
+    fn toString() { return "Mount(${self.device})" }
+}
+class UsbMount extends Mount {
+    var label = ""
+    fn init(device, point, label) {
+        super.init(device, point)
+        self.label = label
+    }
+    fn mount() {
+        print("mounting", self.label)
+        super.mount()
+    }
+}
+var m = Mount("/dev/sda1", "/")
+var u = UsbMount("/dev/sdb1", "/mnt/usb", "STICK")
+m.mount()
+u.mount()
+print(str(u), str(m))
+print(isInstance(u, Mount), isInstance(u, UsbMount), isInstance(m, UsbMount), isInstance(5, Mount))
+print(m == m, m == Mount("/dev/sda1", "/"), type(u))
+u.label = "RENAMED"
+print(u.label)
+class Plain { var n = 0 }
+var p = Plain()
+p.n += 5
+print(p.n)
+try { p.nope = 1 } catch (e) { print(e.message) }
+try { print(p.nope) } catch (e) { print(e.message) }
+try { Plain(1) } catch (e) { print(e.message) }

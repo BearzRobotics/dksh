@@ -1,0 +1,7 @@
+[3, 1, 2] 4 4 3 2
+[10, 1, 2] [1, 2, 10] [10, 2, 1]
+{name: "dksh", two words: 2, extra: true, k: [1]} ["name", "two words", "extra", "k"] ["dksh", 2, true, [1]] 4
+dksh 2 null
+true false true false
+[1, 4, 9] [2, 4]
+name;two words;extra;k;

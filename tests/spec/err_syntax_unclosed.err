@@ -1,0 +1,5 @@
+error: unclosed '{'
+ --> err_syntax_unclosed.dksh:1:11
+  |
+1 | if (true) {
+  |           ^

@@ -1,0 +1,5 @@
+error: condition must be a bool, got int
+ --> err_condition_type.dksh:1:5
+  |
+1 | if (1) { print("yes") }
+  |     ^

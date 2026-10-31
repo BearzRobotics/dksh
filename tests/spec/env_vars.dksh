@@ -1,0 +1,8 @@
+env.DKSH_TEST = "exported"
+sh -c 'echo child sees $DKSH_TEST'
+print(env.DKSH_TEST, env["DKSH_TEST"], env.NOT_SET_ANYWHERE)
+var local = "shell var"
+sh -c 'echo child local=[$local]'
+echo $DKSH_TEST $local
+var DKSH_TEST = "shadowed"
+echo $DKSH_TEST

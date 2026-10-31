@@ -1,0 +1,3 @@
+echo start
+grep -q root /etc/shadow-does-not-exist
+echo not reached

@@ -1,0 +1,4 @@
+module loaded once
+1.0 ["sda", "sdb"]
+sda
+1.0

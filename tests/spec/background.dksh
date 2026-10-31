@@ -1,0 +1,4 @@
+sleep 0.1 &
+echo started
+wait
+echo finished

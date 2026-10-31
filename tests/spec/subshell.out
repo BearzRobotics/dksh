@@ -1,0 +1,8 @@
+inside: /
+true
+child x 2
+parent x 1
+child sees set in child
+null
+PIPED
+0

@@ -1,0 +1,5 @@
+error: field `x` is already declared in parent class A
+ --> err_field_redeclare.dksh:2:21
+  |
+2 | class B extends A { var x = 2 }
+  |                     ^^^^^^^^^^

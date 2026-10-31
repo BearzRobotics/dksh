@@ -1,0 +1,12 @@
+var name = "world"
+var n = 3
+print("hello ${name}! ${n * 2} $name")
+print('single $name ${n}')
+print("tab\there\nnewline \"quoted\" \$escaped \u{263A}")
+print("""
+    indented
+      more
+    back ${name}
+    """)
+print("a" + "b", "abc"[1], len("héllo"))
+print("${[1, 2]} ${{k: "v"}} ${null} ${1.5}")

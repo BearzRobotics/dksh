@@ -1,0 +1,5 @@
+error: unknown escape '\q'
+ --> err_bad_escape.dksh:1:12
+  |
+1 | print("bad \q escape")
+  |            ^

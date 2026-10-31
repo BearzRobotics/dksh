@@ -1,0 +1,9 @@
+handler for USR1
+after kill 1
+got INT
+after INT
+unknown signal: NOSUCH
+KILL cannot be trapped
+a trap handler must be a function or null, got int
+last statement
+exit trap: EXIT

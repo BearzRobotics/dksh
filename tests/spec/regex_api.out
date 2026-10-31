@@ -1,0 +1,19 @@
+name -> dakota name = dakota name 0 13
+null
+true false
+[{0: "1", start: 1, end: 2}, {0: "22", start: 3, end: 5}, {0: "333", start: 6, end: 9}]
+1a 2b 3c
+<a> <b> c3
+a[1]b[2]
+["a", "b", "c", "d"]
+["a", "b,c"]
+matches
+not digits
+true false
+true
+true true false
+rejected: invalid regex: backreferences are not supported (patterns must run in linear time)
+  pattern: (a)\1
+              ^^
+rejected lookahead
+false

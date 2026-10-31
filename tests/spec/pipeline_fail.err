@@ -1,0 +1,5 @@
+error: command failed with status 1: false
+ --> pipeline_fail.dksh:2:1
+  |
+2 | false | cat
+  | ^^^^^^

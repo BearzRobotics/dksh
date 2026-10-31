@@ -1,0 +1,28 @@
+{a: [1, 2.5, true, null, "xé
+"], b: {c: -7}, e: {}, l: []}
+{"a":[1,2.5,true,null,"xé\n"],"b":{"c":-7},"e":{},"l":[]}
+{
+  "name": "dksh",
+  "list": [
+    1,
+    {
+      "x": []
+    }
+  ],
+  "e": {}
+}
+"q\"uote\ttab 😀" 1.5 null 7
+😀 [1, 2] -5.0 12345678901234567000.0
+true
+invalid JSON at byte 6: unexpected character
+invalid JSON at byte 3: unexpected character
+invalid JSON at byte 2: leading zero in number
+invalid JSON at byte 4: unterminated string
+invalid JSON at byte 5: expected ':'
+invalid JSON at byte 4: unexpected data after the value
+invalid JSON at byte 0: unexpected end of input
+invalid JSON at byte 7: unpaired surrogate
+invalid JSON at byte 1: expected a string key
+invalid JSON at byte 0: invalid literal
+cannot convert fn to JSON
+cannot convert nan or inf to JSON

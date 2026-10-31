@@ -1,0 +1,3 @@
+fn half(n) { return 10 / n }
+print(half(5))
+print(half(0))

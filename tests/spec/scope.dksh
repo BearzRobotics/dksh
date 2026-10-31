@@ -1,0 +1,9 @@
+var x = 1
+if true {
+    var x = 2
+    print("inner", x)
+}
+print("outer", x)
+for (var i = 0; i < 2; i++) { var tmp = i }
+fn f() { var x = 3; return x }
+print(f(), x)

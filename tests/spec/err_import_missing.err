@@ -1,0 +1,5 @@
+error: cannot find module "lib/nothing.dksh"
+ --> err_import_missing.dksh:1:1
+  |
+1 | import "lib/nothing.dksh" as nothing
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,6 @@
+import "lib/disks.dksh" as disks
+print(disks.version, disks.listDevices())
+var d = disks.Device("sda")
+print(d.name)
+import "lib/disks.dksh" as again
+print(again.version)

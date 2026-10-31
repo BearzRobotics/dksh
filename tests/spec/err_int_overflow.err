@@ -1,0 +1,5 @@
+error: integer overflow
+ --> err_int_overflow.dksh:1:7
+  |
+1 | print(9223372036854775807 + 1)
+  |       ^^^^^^^^^^^^^^^^^^^^^^^

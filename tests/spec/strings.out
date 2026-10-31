@@ -1,0 +1,9 @@
+hello world! 6 world
+single $name ${n}
+tab	here
+newline "quoted" $escaped ☺
+indented
+  more
+back world
+ab b 6
+[1, 2] {k: "v"} null 1.5

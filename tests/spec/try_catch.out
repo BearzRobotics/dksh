@@ -1,0 +1,5 @@
+caught: boom 1 7 try_catch.dksh null
+status: 1 command failed with status 1: false
+status: 3
+outer from inner
+division by zero

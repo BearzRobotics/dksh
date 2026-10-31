@@ -1,0 +1,2 @@
+echo before
+no-such-command-xyz arg

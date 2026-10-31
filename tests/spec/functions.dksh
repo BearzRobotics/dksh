@@ -1,0 +1,26 @@
+fn greet(name, greeting = "Hello") {
+    return "${greeting}, ${name}!"
+}
+print(greet("Dakota"), greet("Dakota", "Howdy"))
+fn fact(n) { if (n <= 1) { return 1 } return n * fact(n - 1) }
+print(fact(10))
+fn counter() {
+    var c = 0
+    return fn() { c += 1; return c }
+}
+var next = counter()
+next(); next()
+print(next())
+var table = {double: fn(x) { return x * 2 }}
+print(table.double(21))
+fn show(a, b = "dflt") { print("show:", a, b) }
+show one
+show one two
+show Dakota | cat
+fn shout() { print("from a function") }
+shout | tr a-z A-Z
+fn noreturn() { }
+print(noreturn())
+fn later() { return hoisted() }
+fn hoisted() { return "hoisted ok" }
+print(later())

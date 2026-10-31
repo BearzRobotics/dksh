@@ -1,0 +1,5 @@
+error: printf: '%d' needs an int, got string
+ --> err_printf_type.dksh:1:1
+  |
+1 | printf("%d\n", "text")
+  | ^^^^^^^^^^^^^^^^^^^^^^

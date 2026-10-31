@@ -1,0 +1,13 @@
+var before = cwd()
+subshell { cd /; var hidden = 1; print("inside:", cwd()) }
+print(cwd() == before)
+var x = 1
+subshell { x = 2; print("child x", x) }
+print("parent x", x)
+subshell {
+    env.SUBSHELL_VAR = "set in child"
+    sh -c 'echo child sees $SUBSHELL_VAR'
+}
+print(env.SUBSHELL_VAR)
+subshell { echo piped | tr a-z A-Z }
+print(status(sh -c 'exit 0'))

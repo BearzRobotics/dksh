@@ -1,0 +1,5 @@
+error: an array cannot be used as one argument; use @name to splice it
+ --> err_array_arg.dksh:2:6
+  |
+2 | echo $list
+  |      ^^^^^

@@ -1,0 +1,4 @@
+class A { fn init() { } }
+class B extends A {
+    fn init() { print("forgot super") }
+}

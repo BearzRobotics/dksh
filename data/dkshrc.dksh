@@ -1,0 +1,8 @@
+# Default interactive startup file for dksh.
+# Copy to $XDG_CONFIG_HOME/dksh/dkshrc.dksh (usually ~/.config/dksh/) and edit.
+
+# The prompt is whatever this function returns (SPEC 6.3).
+fn prompt() {
+    const sign = env.USER == "root" ? "#" : ">"
+    return "${env.USER}@${hostName()} ${shortPath(cwd())} ${sign} "
+}

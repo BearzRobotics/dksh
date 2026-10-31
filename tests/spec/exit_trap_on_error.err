@@ -1,0 +1,5 @@
+error: command failed with status 1: false
+ --> exit_trap_on_error.dksh:3:1
+  |
+3 | false
+  | ^^^^^

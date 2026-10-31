@@ -1,0 +1,14 @@
+var seen = []
+trap("USR1", fn(s) { push(seen, s); print("handler for", s) })
+trap("EXIT", fn(s) { print("exit trap:", s) })
+kill(pid(), "USR1")
+print("after kill", len(seen))
+trap("USR1")
+trap("INT", fn(s) { print("got INT") })
+kill(pid(), 2)
+print("after INT")
+trap("INT", null)
+try { kill(pid(), "NOSUCH") } catch (e) { print(e.message) }
+try { trap("KILL", fn(s) { }) } catch (e) { print(e.message) }
+try { trap("USR2", 5) } catch (e) { print(e.message) }
+print("last statement")

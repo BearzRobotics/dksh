@@ -1,0 +1,13 @@
+printf("%d|%5d|%-5d|%05d|%+d|% d\n", 42, 42, 42, 42, 42, 42)
+printf("%x|%X|%#x|%o|%#o|%u\n", 255, 255, 255, 8, 8, 7)
+printf("%f|%.2f|%8.3f|%-8.1f|%e|%E|%g|%G\n", 3.14159, 3.14159, 3.14159, 3.14159, 1234.5, 1234.5, 0.00001234, 1e20)
+printf("%s|%10s|%-10s|%.3s|%c|%c|%%\n", "str", "right", "left", "truncate", 65, "z")
+printf("%*d|%-*d|%.*f\n", 6, 7, 6, 7, 2, 2.71828)
+printf("%ld %lld %hd %zd\n", 1, 2, 3, 4)
+printf("%a|%g|%g|%g\n", 1.0, 100000.0, 1000000.0, 0.5)
+print(sprintf("%03d-%s", 7, "x"), sprintf("%5.1f%%", 99.5))
+print(sprintf("%d", -5), sprintf("%i", 5), sprintf("%x", -1))
+try { sprintf("%d", "str") } catch (e) { print(e.message) }
+try { sprintf("%n", 1) } catch (e) { print(e.message) }
+try { sprintf("%d") } catch (e) { print(e.message) }
+print(0.1 + 0.2, 1.0 / 3, 100.0, 1e21, 123456789.125)

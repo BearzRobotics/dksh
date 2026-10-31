@@ -1,0 +1,5 @@
+print(status(true), status(false), status(sh -c 'exit 7'))
+var rc = status(grep -q nomatchever /etc/passwd)
+print("rc=${rc}")
+if (status(true) == 0) { print("ok") }
+print(status(this-command-does-not-exist-xyz))

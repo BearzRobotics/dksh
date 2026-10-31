@@ -1,0 +1,5 @@
+error: subshell exited with status 3
+ --> err_subshell_fail.dksh:1:1
+  |
+1 | subshell { echo before; exit 3 }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

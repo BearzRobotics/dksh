@@ -1,0 +1,5 @@
+error: undefined variable `missing`
+ --> err_undefined_var.dksh:2:11
+  |
+2 | print(a + missing)
+  |           ^^^^^^^

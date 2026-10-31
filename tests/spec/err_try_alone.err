@@ -1,0 +1,5 @@
+error: expected `catch` or `finally` after try block
+ --> err_try_alone.dksh:1:28
+  |
+1 | try { print("no handler") }
+  |                            ^

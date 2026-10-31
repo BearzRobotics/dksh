@@ -1,0 +1,5 @@
+error: division by zero
+ --> err_div_zero.dksh:1:21
+  |
+1 | fn half(n) { return 10 / n }
+  |                     ^^^^^^^

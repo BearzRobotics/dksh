@@ -1,0 +1,13 @@
+var d = $(mktemp -d)
+echo first > $d/f
+echo second >> $d/f
+cat < $d/f
+sh -c 'echo out; echo err 1>&2' > $d/both 2>&1
+sort $d/both
+sh -c 'echo to-stderr 1>&2' 2> $d/e
+cat $d/e
+sh -c 'echo x; echo y 1>&2' &> $d/all
+sort $d/all
+cat <<< "here string"
+var s = "interp"; cat <<< "got ${s}"
+rm -rf $d

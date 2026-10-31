@@ -1,0 +1,72 @@
+.TH DKSH 1 "2026" "dksh" "User Commands"
+.SH NAME
+dksh \- a Unix shell with a C-style scripting language
+.SH SYNOPSIS
+.B dksh
+[\fB\-l\fR] [\fB\-n\fR] [\fB\-c\fR \fIsource\fR | \fIscript\fR [\fIargs\fR...]]
+.SH DESCRIPTION
+.B dksh
+is an interactive shell with pipelines, redirection, job control and tab
+completion, and a scripting language with declared variables, real types,
+braces, functions and classes. It does not run
+.BR sh (1)
+or
+.BR bash (1)
+syntax. It is a single static binary with no libc.
+.SH OPTIONS
+Short options may be combined (\fB\-nx\fR).
+.TP
+.BI \-c " source"
+Run the string. Remaining arguments become the \fBargs\fR array.
+.TP
+.B \-l
+Login shell: read the login profile first. Implied when argv[0] starts with a dash.
+.TP
+.B \-i
+Interactive even if standard input is not a terminal.
+.TP
+.B \-n
+Parse and resolve only; report syntax and name errors and shadowed variables.
+.TP
+.B \-x
+Trace: print each command to standard error as "+ cmd arg..." after expansion
+and before it runs, with arguments quoted.
+.TP
+.B \-e, +e
+Failed commands stop the script (default) / do not.
+.TP
+.B \-\-dump\-ast
+Print the syntax tree instead of running.
+.TP
+.B \-\-tree
+Like \fB\-\-dump\-ast\fR, but drawn as an ASCII tree.
+.TP
+.B \-v, \-\-version
+Print the version.
+.TP
+.B \-h, \-\-help
+Print usage.
+.TP
+.B \-\-
+End of options.
+.SH EXIT STATUS
+0 on success; 1 for a runtime error or failed command; 2 for a syntax or name error.
+.SH FILES
+.TP
+.I /etc/dksh/profile.dksh, $XDG_CONFIG_HOME/dksh/profile.dksh
+Login shells.
+.TP
+.I /etc/dksh/dkshrc.dksh, $XDG_CONFIG_HOME/dksh/dkshrc.dksh
+Interactive shells.
+.TP
+.I $XDG_STATE_HOME/dksh/history
+Command history.
+.TP
+.I $XDG_DATA_HOME/dksh/lib, /usr/share/dksh/lib
+Module search path for bare import names.
+.SH ENVIRONMENT
+.TP
+.B NO_COLOR
+Disable syntax colors and history suggestions in the line editor (also off when TERM is dumb).
+.SH SEE ALSO
+The language guide, docs/language.md, and SPEC.md in the source tree.

@@ -1,0 +1,15 @@
+print(shellQuote("it's a file"), shellQuote("plain-1.txt"), shellQuote(""), shellQuote("a b"), shellQuote('$x;rm'))
+const tricky = "tricky 'name' \$HOME"
+var q = shellQuote(tricky)
+print($(sh -c "printf '%s' ${q}") == tricky)
+var t = time(fn() { sleep(0.05) })
+print(t >= 0.05, t < 1.0, now() > 1.7e9, type(now()))
+sleep(0)
+try { sleep("x") } catch (e) { print(e.message) }
+try { sleep(-1) } catch (e) { print(e.message) }
+var d = $(mktemp -d)
+writeFile("${d}/f", "one\ntwo\r\nthree")
+print(readLines("${d}/f"))
+try { readLines("${d}/missing") } catch (e) { print("missing file is an error") }
+rm -rf $d
+print(readLines("/dev/null"))

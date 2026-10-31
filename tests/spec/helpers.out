@@ -1,0 +1,8 @@
+'it'\''s a file' plain-1.txt '' 'a b' '$x;rm'
+true
+true true true float
+sleep() needs a number of seconds, got string
+sleep() needs a non-negative number
+["one", "two", "three"]
+missing file is an error
+[]

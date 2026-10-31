@@ -1,0 +1,7 @@
+echo one; echo two
+echo a && echo b
+false || echo recovered
+printf 'x\ny\nz\n' | grep -v y | tr a-z A-Z
+echo hello > /dev/null && echo "redirected"
+echo -n no-newline; echo
+true

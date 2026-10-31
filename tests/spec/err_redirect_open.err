@@ -1,0 +1,5 @@
+error: cannot open /nonexistent-dir/file for writing: No such file or directory
+ --> err_redirect_open.dksh:1:9
+  |
+1 | echo hi > /nonexistent-dir/file
+  |         ^^^^^^^^^^^^^^^^^^^^^^^

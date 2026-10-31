@@ -1,0 +1,6 @@
+grep: /etc/shadow-does-not-exist: No such file or directory
+error: command failed with status 2: grep -q root /etc/shadow-does-not-exist
+ --> err_command_failed.dksh:2:1
+  |
+2 | grep -q root /etc/shadow-does-not-exist
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

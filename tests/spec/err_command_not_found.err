@@ -1,0 +1,5 @@
+error: command not found: no-such-command-xyz
+ --> err_command_not_found.dksh:2:1
+  |
+2 | no-such-command-xyz arg
+  | ^^^^^^^^^^^^^^^^^^^

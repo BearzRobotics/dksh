@@ -1,0 +1,5 @@
+error: cannot assign to constant `limit`
+ --> err_const_assign.dksh:2:1
+  |
+2 | limit = 11
+  | ^^^^^

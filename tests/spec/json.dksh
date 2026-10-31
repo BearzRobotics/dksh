@@ -1,0 +1,12 @@
+var d = jsonParse('{"a": [1, 2.5, true, null, "xé\n"], "b": {"c": -7}, "e": {}, "l": []}')
+print(d)
+print(jsonStringify(d))
+print(jsonStringify({name: "dksh", list: [1, {x: []}], e: {}}, 2))
+print(jsonStringify("q\"uote\ttab \u{1F600}"), jsonStringify(1.5), jsonStringify(null), jsonStringify(7))
+print(jsonParse('"😀"'), jsonParse(" [1 , 2] "), jsonParse("-0.5e1"), jsonParse("12345678901234567890"))
+print(jsonStringify(jsonParse(jsonStringify(d))) == jsonStringify(d))
+for (bad in ['{"a": }', '[1,]', '01', '"abc', '{"a" 1}', '[1] x', '', '"\ud800"', '{1: 2}', 'nul']) {
+    try { jsonParse(bad) } catch (e) { print(e.message) }
+}
+try { jsonStringify(print) } catch (e) { print(e.message) }
+try { jsonStringify(1.0 / 0.0) } catch (e) { print(e.message) }

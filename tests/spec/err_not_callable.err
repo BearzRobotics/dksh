@@ -1,0 +1,5 @@
+error: int is not callable
+ --> err_not_callable.dksh:2:1
+  |
+2 | x()
+  | ^^^

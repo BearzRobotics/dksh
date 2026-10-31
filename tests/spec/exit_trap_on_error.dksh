@@ -1,0 +1,4 @@
+trap("EXIT", fn(s) { print("cleanup ran") })
+echo working
+false
+echo not reached

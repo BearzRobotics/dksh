@@ -1,0 +1,13 @@
+42|   42|42   |00042|+42| 42
+ff|FF|0xff|10|010|7
+3.141590|3.14|   3.142|3.1     |1.234500e+03|1.234500E+03|1.234e-05|1E+20
+str|     right|left      |tru|A|z|%
+     7|7     |2.72
+1 2 3 4
+0x1p+0|100000|1e+06|0.5
+007-x  99.5%
+-5 5 ffffffffffffffff
+printf: '%d' needs an int, got string
+printf: %n is not supported
+printf: not enough arguments for '%d'
+0.30000000000000004 0.3333333333333333 100.0 1000000000000000000000.0 123456789.125

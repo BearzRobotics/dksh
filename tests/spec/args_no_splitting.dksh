@@ -1,0 +1,9 @@
+const f = "a file with spaces.txt"
+printf '[%s]\n' $f
+printf '[%s]\n' "$f"
+printf '[%s]\n' '$f'
+printf '[%s]\n' ${f}
+var words = ["one two", "three"]
+printf '[%s]\n' @words
+printf '[%s]\n' pre-$f-post
+printf '[%s]\n' ""

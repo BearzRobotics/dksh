@@ -1,0 +1,11 @@
+# Default login profile for dksh (SPEC 6.4). dksh never reads /etc/profile,
+# which is `sh` syntax; systems using dksh as a login shell ship their own
+# copy of this file as /etc/dksh/profile.dksh.
+
+if (!("PATH" in env)) {
+    env.PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+}
+if (!("EDITOR" in env)) {
+    env.EDITOR = "vi"
+}
+umask 022

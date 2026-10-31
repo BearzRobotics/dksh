@@ -1,0 +1,8 @@
+[dakota]
+4 ["a", "b c", "", "d"]
+<x y>
+<z>
+trailing
+|
+SHOUT
+inline: nested

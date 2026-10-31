@@ -1,0 +1,5 @@
+error: `init` in class B must call super.init(...)
+ --> err_super_init.dksh:3:5
+  |
+3 |     fn init() { print("forgot super") }
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

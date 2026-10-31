@@ -1,0 +1,8 @@
+.{
+    .name = .dksh,
+    .fingerprint = 0x96f958d66a16c435,
+    .version = "0.0.1",
+    .minimum_zig_version = "0.17.0",
+    .dependencies = .{},
+    .paths = .{ "build.zig", "build.zig.zon", "src", "data", "docs" },
+}

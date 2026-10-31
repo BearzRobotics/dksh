@@ -1,0 +1,5 @@
+error: unexpected '*', expected an expression
+ --> err_syntax_unexpected.dksh:1:12
+  |
+1 | var x = 5 +* 3
+  |            ^

@@ -1,0 +1,69 @@
+(* dksh grammar. Source of truth for syntax (SPEC 8). Matches src/parser.zig.
+   Two modes (SPEC 5.1): "expr" rules use expression mode, "command" rules
+   command mode. Comments run from '#' to end of line. *)
+
+program      = { terminator } , { statement , ( terminator | EOF ) , { terminator } } ;
+terminator   = newline | ";" ;
+(* A statement that ends in "}" needs no terminator before the next one. *)
+
+statement    = varDecl | assignment | ifStmt | whileStmt | forStmt | fnDecl
+             | classDecl | returnStmt | tryStmt | subshellStmt | importStmt
+             | "break" | "continue" | callStmt | commandList ;
+
+varDecl      = ( "var" | "const" ) , name , "=" , expr ;
+assignment   = lvalue , ( "=" | "+=" | "-=" | "*=" | "/=" ) , expr
+             | lvalue , ( "++" | "--" ) ;
+lvalue       = name , { "." name | "[" expr "]" } ;
+callStmt     = name , "(" , [ args ] , ")" , { postfix } ;       (* name( with no space *)
+
+ifStmt       = "if" , condition , block , { "else" "if" , condition , block } , [ "else" , block ] ;
+whileStmt    = "while" , condition , block ;
+condition    = "(" , expr , ")"  |  commandList ;                (* a "{" word ends the command *)
+forStmt      = "for" , "(" , ( name "in" expr
+                             | [ varDecl | assignment ] ";" [ expr ] ";" [ assignment ] ) , ")" , block ;
+fnDecl       = "fn" , name , "(" , [ params ] , ")" , block ;
+params       = param , { "," , param } ;
+param        = name , [ "=" , expr ] ;
+classDecl    = "class" , name , [ "extends" , name ] , "{" , { classMember , { terminator } } , "}" ;
+classMember  = "var" , name , "=" , expr | fnDecl ;
+returnStmt   = "return" , [ expr ] ;
+tryStmt      = "try" , block , [ "catch" , "(" , name , ")" , block ] , [ "finally" , block ] ;   (* at least one of catch / finally *)
+subshellStmt = "subshell" , block ;
+importStmt   = "import" , string , "as" , name ;
+block        = "{" , { statement-or-terminator } , "}" ;
+
+(* ---- command mode ---- *)
+commandList  = pipeline , { ( "&&" | "||" ) , pipeline } , [ "&" ] ;
+pipeline     = command , { "|" , command } ;
+command      = { word | redirect } ;                                (* at least one *)
+redirect     = ( ">" | ">>" | "<" | "2>" | "2>>" | "&>" | "<<<" ) , word | "2>&1" ;
+word         = { wordPart } ;
+wordPart     = bareText | "'" text "'" | '"' , { dqPart } , '"'
+             | "$" name { "." name } | "${" expr "}" | "$(" commandList ")"
+             | "@(" commandList ")"     (* whole word: one argument per output line *)
+             | "@" name { "." name }    (* whole word: splice an array *)
+             | "~" [ user ] ;           (* at the start of a word *)
+(* Unquoted * ? [ ] in bareText make the word a glob. *)
+
+(* ---- expression mode ---- *)
+expr         = ternary ;
+ternary      = binary , [ "?" ternary ":" ternary ] ;
+binary       = unary , { binop , unary } ;                          (* precedence: SPEC 5.11 *)
+binop        = "||" | "&&" | "==" | "!=" | "=~" | "!~" | "<" | "<=" | ">" | ">="
+             | "in" | "+" | "-" | "*" | "/" | "%" ;
+unary        = ( "!" | "-" ) , unary | postfix ;
+postfix      = primary , { "(" [ args ] ")" | "[" expr "]" | "." name } ;
+args         = expr , { "," , expr } ;
+primary      = number | string | name | "true" | "false" | "null"
+             | "[" [ args ] "]" | "{" [ mapEntry , { "," , mapEntry } ] "}"
+             | "(" expr ")" | "fn" "(" [ params ] ")" block
+             | "$(" commandList ")" | "@(" commandList ")" | "status(" commandList ")" ;
+mapEntry     = ( name | expr ) , ":" , expr ;                       (* bare names are strings *)
+
+number       = int | float ;
+int          = digit { digit | "_" } | "0x" hex { hex | "_" } | "0o" oct { oct | "_" } | "0b" bin { bin | "_" } ;
+float        = digits "." digits [ exponent ] | digits exponent ;
+string       = '"' { dqPart } '"' | "'" text "'" | '"""' { dqPart | newline } '"""' ;
+dqPart       = text | escape | "$" name | "${" expr "}" | "$(" commandList ")" ;
+escape       = "\n" | "\t" | "\r" | "\0" | "\e" | "\\" | '\"' | "\$" | "\u{" hex+ "}" ;
+name         = ( letter | "_" ) , { letter | digit | "_" } ;

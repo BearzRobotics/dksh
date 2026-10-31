@@ -1,0 +1,7 @@
+error: invalid regex: backreferences are not supported (patterns must run in linear time)
+  pattern: (a)\1
+              ^^
+ --> err_regex_backref.dksh:1:10
+  |
+1 | var re = regex('(a)\1')
+  |          ^^^^^^^^^^^^^^

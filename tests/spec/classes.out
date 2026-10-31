@@ -1,0 +1,11 @@
+mount /dev/sda1 on /
+mounting STICK
+mount /dev/sdb1 on /mnt/usb
+Mount(/dev/sdb1) Mount(/dev/sda1)
+true true false false
+true false UsbMount
+RENAMED
+5
+Plain has no field `nope`
+Plain has no field or method `nope`
+Plain has no init method but was given 1 argument(s)
