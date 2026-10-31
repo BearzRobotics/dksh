@@ -84,11 +84,16 @@ What that means for you:
 - **Some tests encode the AI's own reading of the spec.** Expected outputs
   were checked by eye, so the tests show the shell is consistent, not that
   every behavior is right.
-- **Copyright and licensing of AI-generated code are unsettled** in many
-  jurisdictions. No license has been chosen yet, so by default all rights are
-  reserved; ask the owner before reusing it.
+- **Copyright in AI-generated code is unsettled** in many jurisdictions. The
+  project is released under the MIT License (see [LICENSE](LICENSE)) by the
+  repository owner, but nobody can promise how much of it is copyrightable.
+  The license's "as is" warranty disclaimer applies in full.
 
 Bug reports and reviews are very welcome.
+
+## License
+
+[MIT](LICENSE) © 2026 Dakota Keeler. The Unicode data under `data/ucd/` is covered by its own license, below.
 
 ## Third-party data
 
