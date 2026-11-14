@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.2
+
+- Add `examples/`: ten runnable scripts covering variables, collections, classes,
+  errors, regex, pipelines, JSON and `trap` cleanup.
+
 ## 0.0.1
 
 First tagged release. Everything in [SPEC.md](SPEC.md) is implemented.

@@ -56,7 +56,7 @@ to `$SHELL -c`.
 ### As a Zig dependency
 
 ```
-zig fetch --save https://github.com/BearzRobotics/dksh/releases/download/v0.0.1/dksh-0.0.1.tar.gz
+zig fetch --save https://github.com/BearzRobotics/dksh/releases/download/v0.0.2/dksh-0.0.2.tar.gz
 ```
 
 ```zig
