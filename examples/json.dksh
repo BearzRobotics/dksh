@@ -1,0 +1,9 @@
+#!/usr/bin/dksh
+# json.dksh - build a value, serialize it, parse it back.
+
+var doc = {name: "dksh", tags: ["shell", "zig"], stable: false, size: 6.5}
+var text = jsonStringify(doc, 2)
+print(text)
+
+var back = jsonParse(text)
+print(back.name, back.tags[1], back == doc)

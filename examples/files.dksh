@@ -1,0 +1,20 @@
+#!/usr/bin/dksh
+# files.dksh DIR - walk a directory and report sizes. Uses a class for the report.
+
+const dir = len(args) > 0 ? args[0] : "."
+if (!isDir(dir)) { error("not a directory: ${dir}") }
+
+class Tally {
+    var files = 0
+    var bytes = 0
+    fn add(size) {
+        self.files += 1
+        self.bytes += size
+    }
+}
+
+var t = Tally()
+for (path in @(find $dir -maxdepth 1 -type f)) {
+    t.add(int($(stat -c %s $path)))
+}
+printf("%s: %d files, %d bytes\n", dir, t.files, t.bytes)

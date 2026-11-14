@@ -1,0 +1,21 @@
+#!/usr/bin/dksh
+# classes.dksh - classes, inheritance and super.
+
+class Animal {
+    var name = ""
+    fn init(name) { self.name = name }
+    fn speak() { return "${self.name} makes a sound" }
+}
+
+class Dog extends Animal {
+    fn speak() { return "${self.name} barks" }
+}
+
+class Puppy extends Dog {
+    fn speak() { return super.speak() + " (squeakily)" }
+}
+
+for (a in [Animal("Generic"), Dog("Rex"), Puppy("Bit")]) {
+    print(a.speak())
+}
+print(isInstance(Puppy("x"), Animal), isInstance(Animal("x"), Dog))

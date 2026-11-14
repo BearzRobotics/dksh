@@ -1,0 +1,16 @@
+#!/usr/bin/dksh
+# regex.dksh - the built-in regex engine: match, named groups, replace, split.
+
+const entry = regex('^(?<key>\w+)\s*=\s*(?<value>.*)$')
+for (line in ["name = dksh", "bad line", "version=0.0.1"]) {
+    var m = entry.match(line)
+    if (m != null) {
+        print("${m.key} -> ${m.value}")
+    } else {
+        print("no match: ${line}")
+    }
+}
+
+print(regex('(\w)(\d)').replace("a1 b2 c3", '$2$1'))
+print(regex('\s*,\s*').split("a , b,c ,d"))
+print("2026-11-13" =~ '^\d{4}-\d{2}-\d{2}$')

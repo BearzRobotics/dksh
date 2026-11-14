@@ -1,0 +1,17 @@
+#!/usr/bin/dksh
+# hello.dksh [NAME...] - variables, interpolation, args and a function.
+
+fn greet(name, punctuation = "!") {
+    return "Hello, ${name}${punctuation}"
+}
+
+if (len(args) == 0) {
+    print(greet("world"))
+} else {
+    for (who in args) {
+        print(greet(who))
+    }
+}
+
+const n = len(args)
+print("called with ${n} argument${n == 1 ? "" : "s"}")

@@ -1,0 +1,12 @@
+#!/usr/bin/dksh
+# trap_cleanup.dksh - temp files cleaned up on exit, even when the script fails.
+
+var tmp = $(mktemp)
+trap("EXIT", fn(sig) {
+    rm -f $tmp
+    print("cleaned up")
+})
+
+echo "working" > $tmp
+cat $tmp
+error("simulated failure")

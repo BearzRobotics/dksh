@@ -1,0 +1,27 @@
+#!/usr/bin/dksh
+# collections.dksh - arrays, maps, map/filter/sort and closures.
+
+var nums = [5, 3, 8, 1, 9, 2]
+print("sorted:  ", sort(nums))
+print("desc:    ", sort(nums, fn(a, b) { return b - a }))
+print("squares: ", map(nums, fn(x) { return x * x }))
+print("evens:   ", filter(nums, fn(x) { return x % 2 == 0 }))
+
+var ages = {alice: 31, bob: 27}
+ages.carol = 45
+for (name in ages) {
+    print("${name} is ${ages[name]}")
+}
+print("has bob:", "bob" in ages, " has dave:", "dave" in ages)
+
+fn counter() {
+    var n = 0
+    return fn() {
+        n += 1
+        return n
+    }
+}
+var next = counter()
+next()
+next()
+print("counter:", next())

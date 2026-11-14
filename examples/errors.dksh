@@ -1,0 +1,27 @@
+#!/usr/bin/dksh
+# errors.dksh - try/catch/finally; failed commands raise errors.
+
+try {
+    error("something went wrong")
+} catch (e) {
+    print("caught:", e.message)
+} finally {
+    print("cleanup always runs")
+}
+
+# A failing command stops the script unless you catch it.
+try {
+    false
+    print("not reached")
+} catch (e) {
+    print("command failed, script continued")
+}
+
+fn parsePort(s) {
+    var p = int(s)
+    if (p < 1 || p > 65535) { error("port out of range: ${p}") }
+    return p
+}
+for (s in ["80", "99999"]) {
+    try { print("port", parsePort(s)) } catch (e) { print(e.message) }
+}

@@ -1,0 +1,18 @@
+#!/usr/bin/dksh
+# fizzbuzz.dksh [N] - loops, conditions and integer math.
+
+const limit = len(args) > 0 ? int(args[0]) : 15
+
+var i = 1
+while (i <= limit) {
+    if (i % 15 == 0) {
+        print("FizzBuzz")
+    } else if (i % 3 == 0) {
+        print("Fizz")
+    } else if (i % 5 == 0) {
+        print("Buzz")
+    } else {
+        print(i)
+    }
+    i += 1
+}

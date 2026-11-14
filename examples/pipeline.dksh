@@ -1,0 +1,18 @@
+#!/usr/bin/dksh
+# pipeline.dksh - ordinary shell work: pipes, redirection, capturing output.
+
+var dir = $(mktemp -d)
+trap("EXIT", fn(sig) { rm -rf $dir })
+
+printf "banana\napple\ncherry\napple\n" > "${dir}/fruit.txt"
+
+sort "${dir}/fruit.txt" | uniq -c | sort -rn
+echo "---"
+
+var lines = @(sort -u "${dir}/fruit.txt")     # one array element per line
+print(lines, len(lines))
+
+var count = int($(wc -l < "${dir}/fruit.txt"))
+print("total lines:", count)
+
+if grep -q cherry "${dir}/fruit.txt" { print("cherry found") }
